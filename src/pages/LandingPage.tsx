@@ -91,7 +91,6 @@ export function LandingPage({ onStart }: LandingPageProps) {
             Gamified routines. Real-time feedback. Legendary results.
           </p>
         </motion.div>
-... (rest of the file) ...
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
