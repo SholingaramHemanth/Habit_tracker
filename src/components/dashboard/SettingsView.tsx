@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/src/context/ThemeContext';
 import { GlassCard } from '../ui/GlassCard';
 import { 
@@ -7,7 +7,7 @@ import {
   Gamepad2, Plane, Lock, Download, Sparkles, Languages,
   MoreHorizontal, ChevronRight, Check, Volume2, 
   Settings as SettingsIcon, EyeOff, RefreshCcw, FlaskConical,
-  Snooze, VolumeX, BellRing, Smartphone, Ban
+  VolumeX, BellRing, Smartphone, Ban
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { User, UserSettings } from '@/src/types';

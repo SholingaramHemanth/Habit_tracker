@@ -19,11 +19,12 @@ const MISSIONS: Mission[] = [
   { id: 'm2', description: 'Maintain a 7-day streak', rewardXp: 100, completed: false },
 ];
 
-const maleAvatars = Array.from({ length: 15 }, (_, i) => `https://api.dicebear.com/7.x/avataaars/svg?seed=male_${i}&baseColor=transparent&hairColor=black,brown,blonde`);
-const femaleAvatars = Array.from({ length: 15 }, (_, i) => `https://api.dicebear.com/7.x/avataaars/svg?seed=female_${i}&baseColor=transparent&hairColor=black,brown,blonde`);
+const maleAvatars = Array.from({ length: 15 }, (_, i) => `https://api.dicebear.com/7.x/avataaars/svg?seed=male_${i}&backgroundColor=transparent`);
+const femaleAvatars = Array.from({ length: 15 }, (_, i) => `https://api.dicebear.com/7.x/avataaars/svg?seed=female_${i}&backgroundColor=transparent`);
 
 interface DashboardProps {
   onLogout: () => void;
+  onNavigateSettings?: () => void;
 }
 
 const INITIAL_USER: User = {
@@ -112,7 +113,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
   const currentAvatars = user.gender === 'female' ? femaleAvatars : maleAvatars;
 
-  const handleSetupComplete = () => {
+  const handleSetupComplete = (data?: any) => {
     setIsSettingUp(false);
   };
 
