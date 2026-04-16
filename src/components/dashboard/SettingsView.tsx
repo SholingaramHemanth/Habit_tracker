@@ -202,12 +202,52 @@ export function SettingsView({ user, onUpdate }: SettingsViewProps) {
                 <GlassCard className="p-0 border-card-border divide-y divide-card-border overflow-hidden">
                   <SettingRow icon={Clock} title="Reminder Time" desc="Set your daily check-in windows">
                     <div className="flex gap-2">
-                      <span className="px-3 py-1.5 bg-foreground/[0.05] rounded-xl text-[10px] font-black">09:00</span>
-                      <span className="px-3 py-1.5 bg-foreground/[0.05] rounded-xl text-[10px] font-black">21:00</span>
+                      {user.settings.reminders.times.map((time, idx) => (
+                        <input
+                          key={idx}
+                          type="time"
+                          value={time}
+                          onChange={(e) => {
+                            const newTimes = [...user.settings.reminders.times];
+                            newTimes[idx] = e.target.value;
+                            updateReminders({ times: newTimes });
+                          }}
+                          className="bg-foreground/[0.05] rounded-xl text-[10px] font-black px-2 py-1 border-none focus:ring-1 focus:ring-primary outline-none"
+                        />
+                      ))}
+                      <button 
+                        onClick={() => updateReminders({ times: [...user.settings.reminders.times, "12:00"] })}
+                        className="px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-[10px] font-black hover:bg-primary/20 transition-all"
+                      >
+                        +
+                      </button>
                     </div>
                   </SettingRow>
                   <SettingRow icon={Calendar} title="Repeat Days" desc="Select active tracking days">
-                    <button className="text-[10px] font-black text-primary uppercase tracking-widest">Edit Schedule</button>
+                    <div className="flex gap-1">
+                      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                        const isActive = user.settings.reminders.repeatDays.includes(day);
+                        return (
+                          <button
+                            key={day}
+                            onClick={() => {
+                              const newDays = isActive 
+                                ? user.settings.reminders.repeatDays.filter(d => d !== day)
+                                : [...user.settings.reminders.repeatDays, day];
+                              updateReminders({ repeatDays: newDays });
+                            }}
+                            className={cn(
+                              "w-8 h-8 rounded-lg text-[8px] font-black uppercase transition-all border",
+                              isActive 
+                                ? "bg-primary border-primary text-white" 
+                                : "bg-foreground/[0.03] border-card-border text-foreground/20 hover:border-foreground/40"
+                            )}
+                          >
+                            {day.slice(0, 1)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </SettingRow>
                   <SettingRow icon={Sparkles} title="Smart Reminder" desc="Predictive alerts based on behavior">
                     <Toggle active={user.settings.reminders.smartReminders} onToggle={() => updateReminders({ smartReminders: !user.settings.reminders.smartReminders })} />

@@ -114,6 +114,46 @@ export function Dashboard({ onLogout }: DashboardProps) {
   useEffect(() => {
     if (!user.settings.reminders.enabled) return;
 
+    const checkReminders = () => {
+      const now = new Date();
+      const currentDay = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];
+      const currentTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+      // Only proceed if today is an active tracking day
+      if (!user.settings.reminders.repeatDays.includes(currentDay)) return;
+
+      // Check if current time is a scheduled reminder time
+      if (user.settings.reminders.times.includes(currentTime)) {
+        const reminderId = `reminder-${currentDay}-${currentTime}`;
+        
+        // Prevent duplicate notifications for the same time slot
+        setNotifications(prev => {
+          if (prev.some(n => n.id.startsWith(`reminder-${currentDay}-${currentTime}`))) return prev;
+
+          const pendingCount = habits.filter(h => !h.completedToday).length;
+          if (pendingCount === 0) return prev;
+
+          return [{
+            id: `${reminderId}-${Date.now()}`,
+            type: 'reminder' as const,
+            title: '✨ Aura Check-In',
+            message: `Time for your scheduled check-in! You have ${pendingCount} habits pending.`,
+            timestamp: 'Just now',
+            read: false
+          }, ...prev];
+        });
+      }
+    };
+
+    const interval = setInterval(checkReminders, 60000);
+    checkReminders(); // Initial check
+
+    return () => clearInterval(interval);
+  }, [habits, user.settings.reminders]);
+
+  useEffect(() => {
+    if (!user.settings.reminders.enabled) return;
+
     const pendingHabits = habits.filter(h => !h.completedToday);
     setNotifications(prev => {
       const existingHabitIds = prev.filter(n => n.type === 'habit').map(n => n.habitId);
