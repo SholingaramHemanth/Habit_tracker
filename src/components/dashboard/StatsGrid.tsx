@@ -44,7 +44,7 @@ export function StatsGrid({ mode, isEmpty }: StatsGridProps) {
           </div>
         </div>
         <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="99%" height={256}>
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
