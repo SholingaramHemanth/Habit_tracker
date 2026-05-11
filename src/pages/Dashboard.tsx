@@ -7,7 +7,7 @@ import { NotificationPanel } from '@/src/components/dashboard/NotificationPanel'
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { GlassCard } from '@/src/components/ui/GlassCard';
 import { Habit, User, Mission, Notification } from '@/src/types';
-import { Bell, Search, Trophy, Star, Zap, BellOff } from 'lucide-react';
+import { Bell, Search, Trophy, Star, Zap, BellOff, Shield, BookOpen, Clock, Activity, Hexagon } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import confetti from 'canvas-confetti';
@@ -801,6 +801,89 @@ export function Dashboard({ onLogout }: DashboardProps) {
                     </GlassCard>
                   </div>
                 </div>
+
+                {/* === NEW UI: RELICS & AURA LOG === */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 30 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  transition={{ duration: 0.6, delay: 0.2, type: 'spring' }}
+                  className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8"
+                  style={{ willChange: 'transform, opacity' }}
+                >
+                  {/* Relics Panel */}
+                  <GlassCard glow="gold" className="p-8 border-card-border/50 lg:col-span-2 space-y-6 overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none transition-opacity duration-1000 group-hover:bg-primary/10" />
+                    
+                    <div className="flex items-center justify-between relative z-10">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
+                          <Shield className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-foreground tracking-tight uppercase">Equipped Relics</h3>
+                          <p className="text-[9px] text-foreground/30 font-bold uppercase tracking-widest">Active Aura Modifiers</p>
+                        </div>
+                      </div>
+                      <button className="text-[9px] font-black text-primary uppercase tracking-widest hover:text-primary-light transition-colors px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/50 hover:bg-primary/5">
+                        Inventory
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
+                      {[
+                        { name: "Crown of Focus", desc: "+10% XP on completion", icon: "👑", color: "from-amber-500/20 to-orange-500/5", border: "border-amber-500/30" },
+                        { name: "Amulet of Time", desc: "Allows 1 missed day", icon: "⏳", color: "from-blue-500/20 to-cyan-500/5", border: "border-blue-500/30" },
+                        { name: "Ring of Vigor", desc: "Streak multiplier active", icon: "💍", color: "from-emerald-500/20 to-green-500/5", border: "border-emerald-500/30" },
+                        { name: "Void Cloak", desc: "Hides negative stats", icon: "🦹", color: "from-purple-500/20 to-fuchsia-500/5", border: "border-purple-500/30" },
+                      ].map((relic, i) => (
+                        <motion.div 
+                          key={i}
+                          whileHover={{ y: -4, scale: 1.02 }}
+                          className={cn("p-4 rounded-2xl border bg-gradient-to-br cursor-pointer transition-all", relic.color, relic.border, "hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]")}
+                          style={{ willChange: 'transform' }}
+                        >
+                          <div className="text-3xl mb-3">{relic.icon}</div>
+                          <div className="text-xs font-black text-foreground uppercase tracking-tight">{relic.name}</div>
+                          <div className="text-[8px] font-bold text-foreground/40 uppercase tracking-widest mt-1 leading-relaxed">{relic.desc}</div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </GlassCard>
+
+                  {/* Aura Log */}
+                  <GlassCard className="p-8 border-card-border/50 space-y-6 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 blur-[50px] rounded-full pointer-events-none transition-opacity duration-1000 group-hover:bg-secondary/10" />
+                    
+                    <div className="flex items-center gap-3 relative z-10">
+                      <div className="p-2.5 bg-secondary/10 rounded-xl border border-secondary/20">
+                        <Activity className="w-5 h-5 text-secondary" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-foreground tracking-tight uppercase">Aura Log</h3>
+                        <p className="text-[9px] text-foreground/30 font-bold uppercase tracking-widest">Recent Transmissions</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 relative z-10">
+                      {[
+                        { text: "Reached Level 5", time: "2h ago", type: "level" },
+                        { text: "Morning Yoga completed", time: "5h ago", type: "habit" },
+                        { text: "7-Day Streak Achieved!", time: "1d ago", type: "milestone" },
+                      ].map((log, i) => (
+                        <div key={i} className="flex gap-4 items-start group/log cursor-default">
+                          <div className="flex flex-col items-center mt-1">
+                            <div className={cn("w-2 h-2 rounded-full", log.type === 'level' ? "bg-primary shadow-[0_0_8px_rgba(139,92,246,0.8)]" : log.type === 'milestone' ? "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" : "bg-secondary")} />
+                            {i !== 2 && <div className="w-px h-8 bg-foreground/10 my-1" />}
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-foreground/80 group-hover/log:text-foreground transition-colors">{log.text}</div>
+                            <div className="text-[9px] font-black text-foreground/30 uppercase tracking-widest mt-0.5">{log.time}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </GlassCard>
+                </motion.div>
               </>
             )}
 
