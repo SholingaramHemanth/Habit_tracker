@@ -13,7 +13,7 @@ const PARTICLES = Array.from({ length: 10 }, (_, i) => ({
 
 interface LandingPageProps { onLogin: () => void; }
 
-function ScrollReveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+const ScrollReveal: React.FC<{ children: React.ReactNode; className?: string; delay?: number }> = ({ children, className = '', delay = 0 }) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
   return (

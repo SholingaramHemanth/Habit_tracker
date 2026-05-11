@@ -1,4 +1,4 @@
-import { ReactNode, useRef, useState } from 'react';
+import React, { ReactNode, useRef, useState } from 'react';
 import { cn } from '@/src/lib/utils';
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 

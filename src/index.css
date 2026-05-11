@@ -89,6 +89,7 @@
       rgba(212,175,55,0.5) 100%
     );
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
@@ -315,6 +316,7 @@
     border: 2px solid transparent;
     background: conic-gradient(from 0deg, transparent 0%, #d4af37 25%, transparent 50%, #c8102e 75%, transparent 100%) border-box;
     -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     animation: energy-rotate 3s linear infinite;
