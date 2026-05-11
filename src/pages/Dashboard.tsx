@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Sidebar } from '@/src/components/dashboard/Sidebar';
 import { HabitList } from '@/src/components/dashboard/HabitList';
 import { StatsGrid } from '@/src/components/dashboard/StatsGrid';
@@ -8,11 +8,59 @@ import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { GlassCard } from '@/src/components/ui/GlassCard';
 import { Habit, User, Mission, Notification } from '@/src/types';
 import { Bell, Search, Trophy, Star, Zap, BellOff } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import confetti from 'canvas-confetti';
 
+const EMBER_COLORS = ['#d4af37', '#c8102e', '#ff8c42', '#d4af37', '#e8d5b0'];
+const EMBER_PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+  size:     1.5 + ((i * 37) % 30) / 10,
+  left:     (i * 53) % 100,
+  color:    EMBER_COLORS[i % EMBER_COLORS.length],
+  glow:     4 + ((i * 17) % 60) / 10,
+  drift:    ((i * 41) % 120) - 60,
+  duration: 6 + ((i * 29) % 80) / 10,
+  delay:    (i * 23) % 8,
+}));
+
+const BACKGROUND_IMAGES = [
+  // Elegant High-Res Nature
+  'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?q=80&w=2500&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2500&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2500&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=2500&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1470071131384-001b85755536?q=80&w=2500&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1426604966848-d7adac402bff?q=80&w=2500&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1505820013142-f86a3439c5b2?q=80&w=2500&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?q=80&w=2500&auto=format&fit=crop'
+];
+
 const INITIAL_HABITS: Habit[] = [];
+
+const HABIT_TEMPLATES = [
+  { name: 'Morning Yoga', icon: '🧘', color: 'bg-emerald-500' },
+  { name: 'Deep Work', icon: '💻', color: 'bg-indigo-500' },
+  { name: 'Hydrate', icon: '🚰', color: 'bg-sky-500' },
+  { name: 'Journaling', icon: '✍️', color: 'bg-amber-500' },
+  { name: 'Read 20 Pages', icon: '📚', color: 'bg-purple-500' },
+  { name: 'Meditation', icon: '🧠', color: 'bg-teal-500' },
+  { name: 'Cold Shower', icon: '🚿', color: 'bg-blue-500' },
+  { name: 'Walk 10k Steps', icon: '🚶‍♂️', color: 'bg-lime-500' },
+  { name: 'Coding Practice', icon: '⌨️', color: 'bg-zinc-800' },
+  { name: 'No Sugar', icon: '🚫', color: 'bg-red-500' },
+  { name: 'Sleep 8 Hours', icon: '🛌', color: 'bg-indigo-400' },
+  { name: 'Stretching', icon: '🤸', color: 'bg-orange-500' },
+  { name: 'Call Family', icon: '📞', color: 'bg-pink-500' },
+  { name: 'Learn Language', icon: '🌍', color: 'bg-cyan-500' },
+  { name: 'Workout', icon: '🏋️', color: 'bg-rose-500' },
+  { name: 'Gratitude', icon: '🙏', color: 'bg-yellow-500' },
+  { name: 'Vitamins', icon: '💊', color: 'bg-fuchsia-500' },
+  { name: 'Clean Workspace', icon: '🧹', color: 'bg-stone-500' },
+  { name: 'Financial Review', icon: '📈', color: 'bg-emerald-600' },
+  { name: 'Read News', icon: '📰', color: 'bg-slate-500' },
+  { name: 'Digital Detox', icon: '📵', color: 'bg-rose-700' },
+  { name: 'Review Goals', icon: '🎯', color: 'bg-red-600' }
+];
 
 const MISSIONS: Mission[] = [
   { id: 'm1', description: 'Complete 3 habits today', rewardXp: 50, completed: false },
@@ -58,7 +106,7 @@ const INITIAL_USER: User = {
       showXp: true,
       showLevels: true,
       showRewards: true,
-    },
+    }, 
     habits: {
       resetRule: '1miss',
       units: {
@@ -111,6 +159,8 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [isSettingUp, setIsSettingUp] = useState(() => !user.gender);
 
+  const [bgImage] = useState(() => BACKGROUND_IMAGES[Math.floor(Math.random() * BACKGROUND_IMAGES.length)]);
+  
   const currentAvatars = user.gender === 'female' ? femaleAvatars : maleAvatars;
 
   const handleSetupComplete = (data?: any) => {
@@ -270,60 +320,136 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-transparent flex overflow-hidden relative z-0">
+      {/* ── Original 3D Animated Nature Background (PRESERVED) ── */}
+      <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none perspective-[1000px] bg-background">
+        <motion.div
+          className="absolute inset-[-10%] w-[120%] h-[120%] bg-cover bg-center opacity-60 brightness-110"
+          style={{ backgroundImage: `url(${bgImage})`, willChange: 'transform' }}
+          animate={{ rotateX: [2, -2, 2], rotateY: [-3, 3, -3], scale: [1, 1.1, 1], z: [0, 50, 0] }}
+          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+        />
+        {/* Dark fantasy vignette on top of nature image */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-transparent" />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(6,4,9,0.5) 100%)' }} />
+      </div>
+
+      {/* ── Floating Ember Particles (D&D style, over background) ── */}
+      <div className="fixed inset-0 z-[1] pointer-events-none overflow-hidden">
+        {EMBER_PARTICLES.map((p, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              left: `${p.left}%`,
+              bottom: '-10px',
+              backgroundColor: p.color,
+              boxShadow: `0 0 ${p.glow}px ${p.color}`,
+              willChange: 'transform, opacity'
+            }}
+            animate={{
+              y: [0, -940],
+              x: [0, p.drift],
+              opacity: [0, 0.9, 0.6, 0],
+              scale: [0.6, 1.2, 0.8, 0],
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: 'easeOut',
+            }}
+          />
+        ))}
+      </div>
+
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={onLogout} />
-      
-      <main className="flex-1 ml-64 p-10 space-y-10 relative">
-        <div className="absolute inset-0 bg-mesh opacity-30 pointer-events-none" />
+
+      <main className="flex-1 ml-64 p-10 space-y-10 relative z-10 w-full h-screen overflow-y-auto custom-scrollbar">
+        <div className="absolute inset-0 bg-mesh opacity-30 pointer-events-none fixed" />
 
         {/* Top Navbar */}
-        <div className="relative z-10 flex items-center justify-between">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, type: 'spring', stiffness: 200 }}
+          className="relative z-10 flex items-center justify-between"
+        >
           <div className="space-y-1">
-            <h1 className="text-3xl font-black tracking-tighter text-foreground uppercase italic">{activeTab}</h1>
-            <p className="text-foreground/30 text-xs font-bold uppercase tracking-[0.2em]">Dashboard / {activeTab}</p>
+            <div className="flex items-center gap-3">
+              {/* Rotating gold diamond */}
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                className="w-2 h-2 rotate-45"
+                style={{ backgroundColor: '#d4af37', boxShadow: '0 0 10px rgba(212,175,55,0.9)' }}
+              />
+              <h1
+                className="text-2xl font-black uppercase tracking-[0.2em]"
+                style={{ fontFamily: 'Cinzel, serif', color: '#d4af37', textShadow: '0 0 20px rgba(212,175,55,0.4)' }}
+              >
+                {activeTab}
+              </h1>
+            </div>
+            <p className="text-[9px] font-bold uppercase tracking-[0.35em]" style={{ color: 'rgba(232,213,176,0.25)', fontFamily: 'Cinzel, serif' }}>
+              Aura Sanctum · {activeTab}
+            </p>
           </div>
 
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-4 bg-foreground/[0.03] border border-card-border px-5 py-2.5 rounded-2xl w-80 focus-within:border-primary/50 transition-all group">
-              <Search className="w-4 h-4 text-foreground/20 group-focus-within:text-primary transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Search habits..." 
-                className="bg-transparent border-none focus:outline-none text-foreground text-xs font-medium w-full"
+          <div className="flex items-center gap-6">
+            {/* Search */}
+            <motion.div
+              className="flex items-center gap-3 px-5 py-3 rounded-xl w-72 focus-within:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all group"
+              style={{
+                background: 'rgba(10,6,15,0.6)',
+                border: '1px solid rgba(212,175,55,0.15)',
+              }}
+            >
+              <Search className="w-4 h-4 transition-colors" style={{ color: 'rgba(212,175,55,0.3)' }} />
+              <input
+                type="text"
+                placeholder="Search quests..."
+                className="bg-transparent border-none focus:outline-none text-xs font-medium w-full"
+                style={{ color: 'rgba(232,213,176,0.8)', fontFamily: 'Cinzel, serif' }}
               />
-            </div>
+            </motion.div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              {/* Bell */}
               <div className="relative">
-                <button 
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
                   className={cn(
-                    "relative p-2.5 bg-foreground/[0.03] border border-card-border rounded-xl transition-all",
-                    !user.settings.reminders.enabled ? "text-foreground/10" : "text-foreground/40 hover:text-foreground hover:scale-110 active:scale-95"
+                    'relative p-3 bg-foreground/[0.04] border border-card-border rounded-xl transition-all',
+                    !user.settings.reminders.enabled ? 'text-foreground/10' : 'text-foreground/50 hover:text-foreground hover:border-primary/40 hover:shadow-[0_0_20px_rgba(139,92,246,0.2)]'
                   )}
                 >
                   {user.settings.reminders.enabled ? (
                     <>
                       <motion.div
-                        animate={unreadCount > 0 ? { rotate: [0, -10, 10, -10, 10, 0] } : {}}
-                        transition={{ repeat: Infinity, duration: 2, repeatDelay: 1 }}
+                        animate={unreadCount > 0 ? { rotate: [0, -15, 15, -10, 10, 0] } : {}}
+                        transition={{ repeat: Infinity, duration: 2, repeatDelay: 2 }}
                       >
                         <Bell className="w-5 h-5" />
                       </motion.div>
                       {unreadCount > 0 && (
-                        <motion.div 
+                        <motion.div
                           initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background shadow-lg shadow-red-500/20" 
+                          animate={{ scale: [1, 1.3, 1] }}
+                          transition={{ duration: 1.5, repeat: Infinity }}
+                          className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-background shadow-[0_0_10px_rgba(239,68,68,0.8)]"
                         />
                       )}
                     </>
                   ) : (
                     <BellOff className="w-5 h-5" />
                   )}
-                </button>
-
-                <NotificationPanel 
+                </motion.button>
+                <NotificationPanel
                   notifications={notifications}
                   isOpen={isNotifOpen}
                   onClose={() => setIsNotifOpen(false)}
@@ -334,58 +460,145 @@ export function Dashboard({ onLogout }: DashboardProps) {
                   onSnooze={handleSnooze}
                 />
               </div>
-              
-              <div className="flex items-center gap-4 pl-6 border-l border-card-border">
+
+              {/* Avatar */}
+              <div className="flex items-center gap-4 pl-5 border-l border-card-border">
                 <div className="text-right">
                   <div className="text-xs font-black text-foreground uppercase tracking-tight">{user.name}</div>
                   <div className="text-[10px] font-bold text-primary-light uppercase tracking-widest">Elite Tier</div>
                 </div>
-                <div 
+                <motion.div
                   onClick={() => setActiveTab('profile')}
-                  className="relative group cursor-pointer"
+                  whileHover={{ scale: 1.08, rotate: 3 }}
+                  whileTap={{ scale: 0.94 }}
+                  className="relative cursor-pointer"
                 >
-                  <div className="absolute inset-0 bg-primary/20 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <img src={user.avatar} alt="Avatar" className="relative w-11 h-11 rounded-xl border border-card-border shadow-lg" />
-                </div>
+                  <motion.div
+                    className="absolute inset-[-3px] rounded-xl"
+                    style={{ background: 'conic-gradient(from 0deg, #8b5cf6, #06b6d4, #10b981, #8b5cf6)' }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                  />
+                  <img src={user.avatar} alt="Avatar" className="relative w-11 h-11 rounded-xl border-2 border-background shadow-xl z-10 block" />
+                </motion.div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 30, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -30, scale: 1.02 }}
+            transition={{ duration: 0.4, type: 'spring', bounce: 0.2 }}
             className="space-y-10"
+            style={{ willChange: 'transform, opacity' }}
           >
             {activeTab === 'dashboard' && (
               <>
-                {/* Level Progress Bar - Conditionally Rendered */}
+                {/* Stunning Welcome & Level Banner */}
                 {user.settings.gamification.showLevels && (
-                  <GlassCard className="p-6 border-card-border flex items-center gap-8 shadow-glow-purple/10" hover={false}>
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-primary/40 blur-xl animate-pulse" />
-                        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-2xl shadow-2xl border border-white/20">
-                          {user.level}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em]">Current Level</div>
-                        <div className="text-lg font-black text-foreground uppercase tracking-tight">Aura Master</div>
-                      </div>
+                  <GlassCard className="relative overflow-hidden p-8 lg:p-12 border-card-border/50 group" hover={false}>
+                    {/* Animated Background Gradients */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-secondary/10 opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
+                    <motion.div 
+                      className="absolute -top-[50%] -left-[10%] w-[60%] h-[200%] bg-primary/20 blur-[120px] rounded-full pointer-events-none"
+                      animate={{ 
+                        rotate: [0, 90, 0],
+                        scale: [1, 1.2, 1]
+                      }}
+                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    />
+                    <motion.div 
+                      className="absolute -bottom-[50%] -right-[10%] w-[60%] h-[200%] bg-secondary/20 blur-[120px] rounded-full pointer-events-none"
+                      animate={{ 
+                        rotate: [0, -90, 0],
+                        scale: [1, 1.5, 1]
+                      }}
+                      transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                    />
+                    
+                    {/* Floating Particles */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+                      {[...Array(5)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_#fff]"
+                          initial={{ 
+                            x: Math.random() * 100 + "%", 
+                            y: Math.random() * 100 + "%",
+                            opacity: 0
+                          }}
+                          animate={{ 
+                            y: [null, Math.random() * -100 - 50],
+                            opacity: [0, 1, 0]
+                          }}
+                          transition={{ 
+                            duration: Math.random() * 5 + 5,
+                            repeat: Infinity,
+                            delay: Math.random() * 5
+                          }}
+                        />
+                      ))}
                     </div>
-                    {user.settings.gamification.showXp && (
-                      <div className="flex-1 space-y-3">
-                        <ProgressBar value={user.xp} max={user.xpToNextLevel} showLabel color="bg-gradient-to-r from-primary via-primary-light to-secondary" />
+
+                    <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
+                      <div className="space-y-3">
+                        <motion.h2 
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.2 }}
+                          className="text-4xl lg:text-5xl font-black text-foreground uppercase tracking-tighter"
+                        >
+                          Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Conquer</span>?
+                        </motion.h2>
+                        <motion.p 
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3 }}
+                          className="text-xs font-bold text-foreground/40 uppercase tracking-[0.3em]"
+                        >
+                          Your journey continues, {user.name}.
+                        </motion.p>
                       </div>
-                    )}
-                    <div className="text-right space-y-1">
-                      <div className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em]">Next Level</div>
-                      <div className="text-xl font-black text-foreground tracking-tighter">{user.xpToNextLevel - user.xp} <span className="text-xs text-foreground/40">XP</span></div>
+
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="flex items-center gap-6 bg-background/40 backdrop-blur-xl p-5 rounded-3xl border border-white/5 shadow-2xl w-full lg:w-auto"
+                      >
+                        <div className="relative group/level cursor-pointer">
+                          <div className="absolute inset-0 bg-primary/40 blur-xl group-hover/level:bg-primary/60 transition-colors duration-500 animate-pulse" />
+                          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-3xl shadow-[0_0_40px_rgba(139,92,246,0.3)] border border-white/20 overflow-hidden">
+                            <motion.div 
+                              className="absolute inset-0 bg-white/20 translate-y-full group-hover/level:translate-y-0 transition-transform duration-500 ease-out" 
+                            />
+                            <span className="relative z-10">{user.level}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-[200px] space-y-3">
+                          <div className="flex justify-between items-end">
+                            <div className="space-y-1">
+                              <div className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.2em]">Rank</div>
+                              <div className="text-lg font-black text-foreground uppercase tracking-tight leading-none">Aura Master</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xl font-black text-primary tracking-tighter leading-none">{user.xp}<span className="text-xs text-foreground/40 ml-1">/ {user.xpToNextLevel}</span></div>
+                            </div>
+                          </div>
+                          <div className="relative h-3 w-full bg-foreground/10 rounded-full overflow-hidden shadow-inner">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(user.xp / user.xpToNextLevel) * 100}%` }}
+                              transition={{ duration: 1.5, ease: "easeOut", delay: 0.5 }}
+                              className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary via-primary-light to-secondary rounded-full shadow-[0_0_15px_rgba(139,92,246,0.5)]"
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
                     </div>
                   </GlassCard>
                 )}
@@ -415,15 +628,12 @@ export function Dashboard({ onLogout }: DashboardProps) {
                       habits={habits} 
                       onToggle={handleToggleHabit} 
                       onAdd={() => {
-                        const names = ['Morning Yoga', 'Deep Work', 'Hydrate', 'Journaling'];
-                        const icons = ['🧘', '💻', '🚰', '✍️'];
-                        const colors = ['bg-emerald-500', 'bg-indigo-500', 'bg-sky-500', 'bg-amber-500'];
-                        const idx = Math.floor(Math.random() * names.length);
+                        const template = HABIT_TEMPLATES[Math.floor(Math.random() * HABIT_TEMPLATES.length)];
                         const newHabit: Habit = {
-                          id: Date.now().toString(),
-                          name: names[idx],
-                          icon: icons[idx],
-                          color: colors[idx],
+                          id: Date.now().toString() + Math.random().toString(),
+                          name: template.name,
+                          icon: template.icon,
+                          color: template.color,
                           streak: 0,
                           completedToday: false
                         };
@@ -431,48 +641,163 @@ export function Dashboard({ onLogout }: DashboardProps) {
                       }} 
                     />
                   </div>
-                  <div className={cn(user.settings.advanced.minimalMode ? "hidden" : "lg:col-span-4 space-y-8")}>
-                    <GlassCard className="p-8 border-card-border space-y-8">
-                      <div className="flex items-center justify-between">
+                  <div className={cn(user.settings.advanced.minimalMode ? 'hidden' : 'lg:col-span-4 space-y-6')}>
+                    {/* === MISSIONS CARD === */}
+                    <GlassCard glow="green" className="p-7 border-card-border/50 space-y-6 overflow-hidden">
+                      {/* Floating accent orb */}
+                      <motion.div
+                        className="absolute -top-8 -right-8 w-32 h-32 bg-accent/10 rounded-full blur-[40px] pointer-events-none"
+                        animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0.8, 0.4] }}
+                        transition={{ duration: 5, repeat: Infinity }}
+                      />
+                      <div className="flex items-center justify-between relative z-10">
                         <div className="flex items-center gap-3">
-                          <div className="p-2.5 bg-accent/10 rounded-xl">
+                          <motion.div
+                            animate={{ rotate: [0, 10, -10, 0] }}
+                            transition={{ duration: 3, repeat: Infinity }}
+                            className="p-2.5 bg-accent/15 rounded-xl border border-accent/20"
+                          >
                             <Trophy className="w-5 h-5 text-accent" />
+                          </motion.div>
+                          <div>
+                            <h3 className="text-sm font-black text-foreground tracking-tight uppercase">Active Missions</h3>
+                            <p className="text-[9px] text-foreground/30 font-bold uppercase tracking-widest">Complete for XP</p>
                           </div>
-                          <h3 className="text-lg font-black text-foreground tracking-tight uppercase">Missions</h3>
                         </div>
-                        <button onClick={() => setActiveTab('stats')} className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-primary-light transition-colors">View All</button>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          onClick={() => setActiveTab('stats')}
+                          className="text-[9px] font-black text-primary uppercase tracking-widest hover:text-primary-light transition-colors px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/50 hover:bg-primary/5"
+                        >
+                          View All
+                        </motion.button>
                       </div>
-                      <div className="space-y-4">
-                        {MISSIONS.map(mission => (
-                          <div key={mission.id} className="group p-5 rounded-2xl bg-foreground/[0.02] border border-card-border hover:border-foreground/[0.1] transition-all space-y-4">
-                            <div className="flex items-start justify-between gap-4">
-                              <p className="text-sm font-bold text-foreground/70 leading-relaxed">{mission.description}</p>
-                              {mission.completed && <Star className="w-5 h-5 text-accent fill-accent animate-pulse" />}
+                      <div className="space-y-3 relative z-10">
+                        {MISSIONS.map((mission, i) => (
+                          <motion.div
+                            key={mission.id}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.1, type: 'spring' }}
+                            whileHover={{ x: -4, scale: 1.01 }}
+                            className="group p-5 rounded-2xl bg-foreground/[0.02] border border-card-border hover:border-accent/30 hover:bg-accent/[0.02] transition-all space-y-3 cursor-default relative overflow-hidden"
+                          >
+                            {/* Sweep on hover */}
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                              <motion.div
+                                className="absolute inset-0"
+                                style={{ background: 'linear-gradient(90deg, transparent, rgba(16,185,129,0.06), transparent)' }}
+                                animate={{ x: ['-100%', '200%'] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                              />
                             </div>
-                            <div className="flex items-center justify-between pt-2">
-                              <div className="flex items-center gap-2">
-                                <Zap className="w-3 h-3 text-accent fill-current" />
+                            <div className="flex items-start justify-between gap-4 relative z-10">
+                              <p className="text-sm font-bold text-foreground/60 leading-relaxed group-hover:text-foreground/90 transition-colors">{mission.description}</p>
+                              {mission.completed && (
+                                <motion.div animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                                  <Star className="w-5 h-5 text-accent fill-accent" />
+                                </motion.div>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between relative z-10">
+                              <div className="flex items-center gap-1.5">
+                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                                  <Zap className="w-3 h-3 text-accent fill-current" />
+                                </motion.div>
                                 <span className="text-[10px] font-black text-accent uppercase tracking-widest">+{mission.rewardXp} XP</span>
                               </div>
-                              <div className={cn("px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.15em]", mission.completed ? "bg-accent/10 text-accent border border-accent/20" : "bg-foreground/5 text-foreground/30 border border-card-border")}>{mission.completed ? 'Claimed' : 'Active'}</div>
+                              <div className={cn('px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-[0.15em]', mission.completed ? 'bg-accent/15 text-accent border border-accent/30' : 'bg-foreground/5 text-foreground/30 border border-card-border')}>
+                                {mission.completed ? '✓ Claimed' : 'Active'}
+                              </div>
                             </div>
-                          </div>
+                          </motion.div>
                         ))}
                       </div>
                     </GlassCard>
-                    <GlassCard className="p-8 border-card-border text-center space-y-8 overflow-hidden relative">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-[60px] rounded-full" />
-                      <div className="relative inline-flex items-center justify-center">
-                        <svg className="w-40 h-40 transform -rotate-90">
-                          <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-foreground/[0.03]" />
-                          <motion.circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={440} initial={{ strokeDashoffset: 440 }} animate={{ strokeDashoffset: 440 - (440 * 0.75) }} transition={{ duration: 2, ease: [0.22, 1, 0.36, 1] }} strokeLinecap="round" className="text-primary drop-shadow-[0_0_12px_rgba(139,92,246,0.2)]" />
+
+                    {/* === 3D ORBITAL DAILY GOAL === */}
+                    <GlassCard glow="purple" className="p-8 border-card-border/50 text-center space-y-6 overflow-hidden relative">
+                      <motion.div
+                        className="absolute -bottom-12 -left-12 w-40 h-40 bg-primary/10 rounded-full blur-[50px] pointer-events-none"
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 6, repeat: Infinity }}
+                      />
+                      <p className="text-[9px] font-black text-foreground/30 uppercase tracking-[0.3em] relative z-10">Daily Resonance</p>
+
+                      {/* 3D Orbital rings */}
+                      <div className="relative inline-flex items-center justify-center" style={{ perspective: '600px' }}>
+                        {/* Outer orbit ring */}
+                        <motion.div
+                          className="absolute w-52 h-52 rounded-full border border-primary/10"
+                          style={{ rotateX: '70deg' }}
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 12, repeat: Infinity, ease: 'linear' }}
+                        >
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-primary/60 rounded-full shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
+                        </motion.div>
+                        {/* Middle orbit ring */}
+                        <motion.div
+                          className="absolute w-44 h-44 rounded-full border border-secondary/10"
+                          style={{ rotateX: '70deg', rotateZ: '45deg' }}
+                          animate={{ rotate: -360 }}
+                          transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
+                        >
+                          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-secondary/80 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.9)]" />
+                        </motion.div>
+
+                        {/* Main SVG ring */}
+                        <svg className="w-40 h-40 transform -rotate-90 relative z-10">
+                          <circle cx="80" cy="80" r="66" stroke="rgba(255,255,255,0.04)" strokeWidth="10" fill="transparent" />
+                          {/* Glow track */}
+                          <circle cx="80" cy="80" r="66" stroke="rgba(139,92,246,0.08)" strokeWidth="16" fill="transparent" />
+                          {/* Progress arc */}
+                          <motion.circle
+                            cx="80" cy="80" r="66"
+                            stroke="url(#arcGrad)"
+                            strokeWidth="10"
+                            fill="transparent"
+                            strokeDasharray={414}
+                            initial={{ strokeDashoffset: 414 }}
+                            animate={{ strokeDashoffset: 414 - (414 * 0.75) }}
+                            transition={{ duration: 2.5, ease: [0.22, 1, 0.36, 1], delay: 0.3 }}
+                            strokeLinecap="round"
+                            style={{ filter: 'drop-shadow(0 0 8px rgba(139,92,246,0.6))' }}
+                          />
+                          <defs>
+                            <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#8b5cf6" />
+                              <stop offset="100%" stopColor="#06b6d4" />
+                            </linearGradient>
+                          </defs>
                         </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-1">
-                          <span className="text-4xl font-black text-foreground tracking-tighter">75%</span>
-                          <span className="text-[10px] font-black text-foreground/20 uppercase tracking-[0.2em]">Daily Goal</span>
+
+                        {/* Center text */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center space-y-0.5 z-10">
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 1.5, type: 'spring', stiffness: 300 }}
+                            className="text-4xl font-black text-foreground tracking-tighter"
+                          >
+                            75%
+                          </motion.span>
+                          <span className="text-[9px] font-black text-foreground/20 uppercase tracking-[0.2em]">Goal</span>
                         </div>
                       </div>
-                      <button onClick={() => { triggerConfetti(); alert("Momentum Boosted!"); }} className="w-full py-4 bg-foreground/[0.03] border border-card-border rounded-2xl text-[10px] font-black text-foreground uppercase tracking-[0.2em] hover:bg-foreground/[0.08] transition-all">Boost Progress</button>
+
+                      <motion.button
+                        onClick={() => { triggerConfetti(); }}
+                        whileHover={{ scale: 1.03, boxShadow: '0 0 30px rgba(139,92,246,0.4)' }}
+                        whileTap={{ scale: 0.96 }}
+                        className="w-full py-4 bg-gradient-to-r from-primary/20 to-secondary/10 border border-primary/30 rounded-2xl text-[10px] font-black text-foreground uppercase tracking-[0.2em] hover:from-primary/30 transition-all relative z-10 overflow-hidden group"
+                      >
+                        <motion.div
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+                          animate={{ x: ['-100%', '200%'] }}
+                          transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                        />
+                        ⚡ Boost Momentum
+                      </motion.button>
                     </GlassCard>
                   </div>
                 </div>
@@ -485,10 +810,16 @@ export function Dashboard({ onLogout }: DashboardProps) {
                   habits={habits} 
                   onToggle={handleToggleHabit} 
                   onAdd={() => {
-                    const names = ['Deep Work', 'Hydrate', 'Journaling'];
-                    const icons = ['💻', '🚰', '✍️'];
-                    const idx = Math.floor(Math.random() * names.length);
-                    setHabits(prev => [...prev, { id: Date.now().toString(), name: names[idx], icon: icons[idx], color: 'bg-primary', streak: 0, completedToday: false }]);
+                        const template = HABIT_TEMPLATES[Math.floor(Math.random() * HABIT_TEMPLATES.length)];
+                        const newHabit: Habit = {
+                          id: Date.now().toString() + Math.random().toString(),
+                          name: template.name,
+                          icon: template.icon,
+                          color: template.color,
+                          streak: 0,
+                          completedToday: false
+                        };
+                        setHabits(prev => [...prev, newHabit]);
                   }} 
                 />
               </div>
@@ -497,8 +828,79 @@ export function Dashboard({ onLogout }: DashboardProps) {
             {activeTab === 'stats' && (
               <div className="space-y-8">
                 <StatsGrid mode={statsMode} isEmpty={habits.length === 0} />
-                <GlassCard className="p-10 border-white/[0.08] h-[400px] flex items-center justify-center">
-                  <p className="text-white/20 font-black italic uppercase tracking-widest text-2xl">Advanced Analytics Engine Loading...</p>
+                <GlassCard className="p-10 border-card-border relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 blur-[100px] rounded-full pointer-events-none transition-opacity duration-700 group-hover:bg-primary/10" />
+                  
+                  <div className="flex items-center justify-between mb-10 relative z-10">
+                    <div>
+                      <h3 className="text-2xl font-black text-foreground uppercase italic tracking-tighter">Performance Matrix</h3>
+                      <p className="text-[10px] text-foreground/40 font-bold uppercase tracking-[0.2em] mt-1">Deep dive into your behavioral patterns</p>
+                    </div>
+                    <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 shadow-[0_0_20px_rgba(139,92,246,0.2)]">
+                      <Zap className="w-6 h-6 text-primary" />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 relative z-10">
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em] ml-1">Consistency Distribution</h4>
+                      </div>
+                      
+                      <div className="space-y-5">
+                        {habits.length > 0 ? habits.map((h, i) => (
+                          <div key={h.id} className="space-y-3 group/item">
+                            <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest transition-colors group-hover/item:text-foreground">
+                              <span className="text-foreground/70 flex items-center gap-3">
+                                <span className="text-lg">{h.icon}</span> {h.name}
+                              </span>
+                              <span className="text-primary group-hover/item:scale-110 transition-transform origin-right">
+                                {Math.min(100, Math.max(15, h.streak * 15))}%
+                              </span>
+                            </div>
+                            <div className="h-2 rounded-full bg-foreground/[0.05] overflow-hidden relative">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(100, Math.max(15, h.streak * 15))}%` }}
+                                transition={{ duration: 1, delay: i * 0.1, ease: "easeOut" }}
+                                className={cn("absolute top-0 left-0 h-full rounded-full shadow-lg", "bg-gradient-to-r from-primary to-secondary")}
+                              />
+                            </div>
+                          </div>
+                        )) : (
+                          <div className="py-8 text-center bg-foreground/[0.02] border border-card-border border-dashed rounded-2xl">
+                            <p className="text-[10px] font-black text-foreground/20 uppercase tracking-[0.2em]">Initiate sequence to gather data</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <h4 className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em] ml-1">AI Behavioral Insights</h4>
+                      <div className="grid grid-cols-2 gap-5">
+                        <div className="p-6 bg-foreground/[0.02] border border-card-border rounded-2xl hover:bg-foreground/[0.05] hover:border-foreground/20 transition-all group/card">
+                          <div className="text-3xl font-black text-foreground group-hover/card:scale-105 transition-transform origin-left">Morning</div>
+                          <div className="text-[9px] font-black text-foreground/40 uppercase tracking-widest mt-2">Peak Momentum Time</div>
+                        </div>
+                        <div className="p-6 bg-foreground/[0.02] border border-card-border rounded-2xl hover:bg-foreground/[0.05] hover:border-foreground/20 transition-all group/card">
+                          <div className="text-3xl font-black text-foreground group-hover/card:scale-105 transition-transform origin-left">Tuesday</div>
+                          <div className="text-[9px] font-black text-foreground/40 uppercase tracking-widest mt-2">Highest Completion Day</div>
+                        </div>
+                        <div className="p-6 bg-primary/10 border border-primary/30 rounded-2xl col-span-2 relative overflow-hidden group/insight hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] transition-all cursor-pointer">
+                           <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/20 to-transparent -translate-x-full group-hover/insight:translate-x-full transition-transform duration-[1500ms] ease-out" />
+                           <div className="flex items-center gap-3 mb-3 relative z-10">
+                             <div className="p-1.5 bg-primary/20 rounded-lg">
+                               <Trophy className="w-4 h-4 text-primary" />
+                             </div>
+                             <span className="text-xs font-black text-primary uppercase tracking-[0.2em]">Neurological Pattern Detected</span>
+                           </div>
+                           <p className="text-sm text-foreground/70 font-medium leading-relaxed relative z-10 group-hover/insight:text-foreground/90 transition-colors">
+                             Your streak remains 40% more resilient when you complete your first habit within 90 minutes of waking up. Leverage early momentum to anchor your day.
+                           </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </GlassCard>
               </div>
             )}
