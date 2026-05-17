@@ -14,17 +14,17 @@ export function MagicCursor() {
   const [isClicking, setIsClicking] = useState(false);
   const [shockwaves, setShockwaves] = useState<Shockwave[]>([]);
 
-  // Raw mouse coordinates (no re-renders!)
+  // Raw mouse coordinates
   const mouseX = useMotionValue(-100);
   const mouseY = useMotionValue(-100);
 
-  // Ultra-responsive spring for the main core dot
-  const coreX = useSpring(mouseX, { stiffness: 1500, damping: 40, mass: 0.05 });
-  const coreY = useSpring(mouseY, { stiffness: 1500, damping: 40, mass: 0.05 });
+  // Core dot spring (very responsive)
+  const coreX = useSpring(mouseX, { stiffness: 2000, damping: 30, mass: 0.05 });
+  const coreY = useSpring(mouseY, { stiffness: 2000, damping: 30, mass: 0.05 });
 
-  // Floating ambient aura (lags slightly behind for an ethereal feel)
-  const auraX = useSpring(mouseX, { stiffness: 300, damping: 30, mass: 0.2 });
-  const auraY = useSpring(mouseY, { stiffness: 300, damping: 30, mass: 0.2 });
+  // Orbit container spring (smoothly trails the core)
+  const orbitX = useSpring(mouseX, { stiffness: 600, damping: 35, mass: 0.15 });
+  const orbitY = useSpring(mouseY, { stiffness: 600, damping: 35, mass: 0.15 });
 
   useEffect(() => {
     const move = (e: MouseEvent) => {
@@ -67,78 +67,96 @@ export function MagicCursor() {
     return () => window.removeEventListener('click', handleClick);
   }, [handleClick]);
 
+  // We will place 3 crystals in a triangle
+  const crystals = [0, 1, 2];
+
   return (
     <>
       <style>{`* { cursor: none !important; }`}</style>
 
-      {/* Floating Ambient Aura */}
+      {/* Orbiting Crystals Container */}
       <motion.div
-        className="fixed pointer-events-none z-[9998] rounded-full mix-blend-screen"
+        className="fixed pointer-events-none z-[9997] flex items-center justify-center mix-blend-screen"
         style={{
-          x: auraX, y: auraY,
+          x: orbitX, y: orbitY,
           width: 60, height: 60,
           marginLeft: -30, marginTop: -30,
-          background: isHovering 
-            ? 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0) 70%)'
-            : 'radial-gradient(circle, rgba(200,16,46,0.15) 0%, rgba(200,16,46,0) 70%)',
         }}
         animate={{
-          scale: isHovering ? 1.5 : isClicking ? 0.8 : [1, 1.2, 1],
+          rotate: isHovering ? 360 : 360,
+          scale: isHovering ? 1.5 : isClicking ? 0.8 : 1,
         }}
-        transition={
-          isHovering || isClicking 
-            ? { type: 'spring', stiffness: 300, damping: 20 }
-            : { duration: 2, repeat: Infinity, ease: 'easeInOut' }
-        }
-      />
-
-      {/* Inner Glowing Core */}
-      <motion.div
-        className="fixed pointer-events-none z-[9999] rounded-full flex items-center justify-center"
-        style={{
-          x: coreX, y: coreY,
-          width: 12, height: 12,
-          marginLeft: -6, marginTop: -6,
-          backgroundColor: isHovering ? '#d4af37' : '#c8102e',
-          boxShadow: isHovering 
-            ? '0 0 10px #d4af37, 0 0 20px #d4af37, 0 0 30px #f5d478' 
-            : '0 0 10px #c8102e, 0 0 20px #c8102e, 0 0 30px #ff6b6b',
+        transition={{
+          rotate: { duration: isHovering ? 2 : 6, repeat: Infinity, ease: 'linear' },
+          scale: { type: 'spring', stiffness: 400, damping: 25 }
         }}
-        animate={{ 
-          scale: isClicking ? 0.5 : isHovering ? 0.8 : 1,
-        }}
-        transition={{ type: 'spring', stiffness: 500, damping: 15 }}
       >
-        {/* Diamond rotation on hover */}
+        {crystals.map((i) => {
+          // Angle in radians
+          const angle = (i * 2 * Math.PI) / crystals.length;
+          const radius = isHovering ? 24 : 16;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+
+          return (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 rounded-full"
+              style={{
+                backgroundColor: '#ffd700',
+                boxShadow: '0 0 10px rgba(212,175,55,0.8), 0 0 20px rgba(139,92,246,0.6)',
+                x, y,
+                clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)', // Diamond crystal shape
+              }}
+              animate={{
+                rotate: -360, // Counter-rotate so they stay upright, or let them spin
+              }}
+              transition={{
+                rotate: { duration: 4, repeat: Infinity, ease: 'linear' }
+              }}
+            />
+          );
+        })}
+        
+        {/* Connection lines between crystals (visible on hover) */}
         <motion.div 
-          className="absolute inset-0 bg-white"
-          style={{ clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)' }}
-          animate={{ 
-            rotate: isHovering ? 180 : 0,
-            opacity: isHovering ? 0.8 : 0 
-          }}
+          className="absolute inset-0 rounded-full border border-primary/30"
+          animate={{ opacity: isHovering ? 1 : 0, scale: isHovering ? 1 : 0.5 }}
           transition={{ duration: 0.3 }}
         />
       </motion.div>
 
-      {/* Click Shockwaves */}
+      {/* Primary Glowing Core */}
+      <motion.div
+        className="fixed pointer-events-none z-[9999] flex items-center justify-center rounded-full bg-white mix-blend-screen"
+        style={{
+          x: coreX, y: coreY,
+          width: 8, height: 8,
+          marginLeft: -4, marginTop: -4,
+          boxShadow: '0 0 15px #ffd700, 0 0 30px rgba(212,175,55,0.8)'
+        }}
+        animate={{ 
+          scale: isClicking ? 0.5 : isHovering ? 0.2 : 1,
+          backgroundColor: isHovering ? '#fff8b0' : '#ffffff'
+        }}
+        transition={{ type: 'spring', stiffness: 800, damping: 15 }}
+      />
+
+      {/* Elaborate Arcane Shockwaves on Click */}
       <AnimatePresence>
         {shockwaves.map(wave => (
           <motion.div
             key={wave.id}
-            className="fixed pointer-events-none z-[9997] rounded-full border-2"
+            className="fixed pointer-events-none z-[9996] rounded-full border border-[#ffd700] mix-blend-screen"
             style={{
               left: wave.x,
               top: wave.y,
-              width: 100,
-              height: 100,
-              marginLeft: -50,
-              marginTop: -50,
-              borderColor: isHovering ? 'rgba(212,175,55,0.8)' : 'rgba(200,16,46,0.8)',
-              boxShadow: isHovering ? '0 0 20px rgba(212,175,55,0.5)' : '0 0 20px rgba(200,16,46,0.5)',
+              width: 100, height: 100,
+              marginLeft: -50, marginTop: -50,
+              boxShadow: '0 0 20px rgba(212,175,55,0.5), inset 0 0 20px rgba(212,175,55,0.3)'
             }}
-            initial={{ scale: 0.1, opacity: 1, borderWidth: '4px' }}
-            animate={{ scale: 2, opacity: 0, borderWidth: '0px' }}
+            initial={{ scale: 0.1, opacity: 1, rotate: 0 }}
+            animate={{ scale: 2, opacity: 0, rotate: 90 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/src/context/ThemeContext';
 import { GlassCard } from '../ui/GlassCard';
+import { playToggle } from '@/src/lib/sounds';
 import { 
   Moon, Sun, Monitor, Bell, Shield, Palette, Zap, 
   User as UserIcon, Clock, Calendar, Hash, Ruler, 
@@ -154,33 +155,65 @@ export function SettingsView({ user, onUpdate }: SettingsViewProps) {
 
   const Toggle = ({ active, onToggle }: { active: boolean, onToggle: () => void }) => (
     <button 
-      onClick={onToggle}
+      onClick={() => { onToggle(); playToggle(!active); }}
       className={cn(
-        "w-14 h-7 rounded-full relative transition-all duration-500 flex items-center p-1 border cursor-pointer overflow-hidden",
-        active ? "bg-primary/20 shadow-[0_0_20px_rgba(139,92,246,0.4)] border-primary/50" : "bg-foreground/5 border-foreground/10 hover:border-foreground/30 hover:bg-foreground/10"
+        "w-16 h-8 rounded-full relative transition-all duration-500 flex items-center p-1 cursor-pointer overflow-hidden",
+        active ? "shadow-[0_0_25px_rgba(212,175,55,0.3)]" : "hover:shadow-[0_0_10px_rgba(255,255,255,0.05)]"
       )}
     >
-      {/* Active background glow */}
-      <AnimatePresence>
-        {active && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-gradient-to-r from-primary to-primary-light opacity-80" 
-          />
-        )}
-      </AnimatePresence>
+      {/* Background track */}
+      <div className={cn(
+        "absolute inset-0 rounded-full transition-all duration-500 border",
+        active ? "border-secondary/50" : "border-foreground/10 bg-foreground/5"
+      )}>
+        {/* Active conic gradient background */}
+        <AnimatePresence>
+          {active && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 rounded-full overflow-hidden"
+            >
+              <motion.div className="absolute inset-0"
+                style={{ background: 'conic-gradient(from 0deg, #c8102e, #d4af37, #7c3aed, #c8102e)' }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} />
+              {/* Inner dark track to create ring effect */}
+              <div className="absolute inset-[2px] rounded-full bg-background/80" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Thumb */}
       <motion.div 
         layout
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={cn(
-          "h-full aspect-square rounded-full shadow-lg relative z-10",
-          active ? "bg-white" : "bg-foreground/30"
+          "w-6 h-6 rounded-full relative z-10 flex items-center justify-center",
+          active ? "bg-white" : "bg-foreground/20"
         )}
         style={{ marginLeft: active ? 'auto' : '0' }}
       >
-        {active && <div className="absolute inset-0 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]" />}
+        {/* Inner glow dot */}
+        <AnimatePresence>
+          {active && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="w-2 h-2 rounded-full bg-gradient-to-r from-primary to-secondary"
+              style={{ boxShadow: '0 0 8px rgba(212,175,55,0.8)' }}
+            />
+          )}
+        </AnimatePresence>
+        {/* Outer glow ring */}
+        {active && (
+          <motion.div className="absolute inset-[-3px] rounded-full border border-secondary/50"
+            animate={{ scale: [1, 1.3, 1], opacity: [0.8, 0, 0.8] }}
+            transition={{ duration: 2, repeat: Infinity }} />
+        )}
       </motion.div>
     </button>
   );
@@ -317,6 +350,52 @@ export function SettingsView({ user, onUpdate }: SettingsViewProps) {
                           )}>{opt.label}</span>
                         </button>
                       ))}
+                    </div>
+                  </GlassCard>
+                </motion.div>
+
+                {/* === NEW: RPG REALM THEME SELECTOR === */}
+                <motion.div variants={itemVariants}>
+                  <GlassCard className="p-8 border-card-border space-y-6 overflow-hidden relative group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[80px] rounded-full pointer-events-none" />
+                    <h3 className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-secondary" /> Select Realm Theme
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      {[
+                        { id: 'light', icon: '☀️', label: 'Light Sanctuary', color: 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5' },
+                        { id: 'dark', icon: '🏰', label: 'Dark Citadel', color: 'border-primary/30 text-primary bg-primary/5' },
+                        { id: 'void', icon: '🌌', label: 'Abyssal Void', color: 'border-purple-500/30 text-purple-500 bg-purple-500/5' },
+                        { id: 'forest', icon: '🌲', label: 'Elven Forest', color: 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5' },
+                        { id: 'forge', icon: '🌋', label: 'Dwarven Forge', color: 'border-orange-500/30 text-orange-500 bg-orange-500/5' },
+                      ].map(realm => {
+                        const isActive = (user.settings.realm || 'dark') === realm.id;
+                        return (
+                          <button
+                            key={realm.id}
+                            onClick={() => {
+                              updateSettings({ realm: realm.id as any });
+                              playToggle(true);
+                            }}
+                            className={cn(
+                              "flex flex-col items-center gap-4 p-5 rounded-3xl border-2 transition-all relative overflow-hidden group/realm",
+                              isActive
+                                ? "shadow-[0_0_30px_rgba(212,175,55,0.2)] border-secondary bg-secondary/15"
+                                : "bg-foreground/[0.02] border-transparent hover:border-white/10 hover:bg-foreground/[0.05]"
+                            )}
+                          >
+                            <div className="text-3xl filter drop-shadow-[0_0_10px_rgba(255,255,255,0.2)] transition-transform group-hover/realm:scale-125 duration-300">
+                              {realm.icon}
+                            </div>
+                            <span className={cn(
+                              "text-[9px] font-black uppercase tracking-widest text-center relative z-10 leading-tight",
+                              isActive ? "text-secondary" : "text-foreground/40 group-hover/realm:text-foreground/80"
+                            )}>
+                              {realm.label}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </GlassCard>
                 </motion.div>

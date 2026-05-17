@@ -9,6 +9,7 @@ export interface Habit {
 
 export interface UserSettings {
   theme: 'dark' | 'light' | 'system';
+  realm?: 'light' | 'dark' | 'void' | 'forest' | 'forge';
   accentColor: string;
   weekStart: 'sunday' | 'monday';
   language: string;
@@ -62,6 +63,10 @@ export interface User {
   gender?: 'male' | 'female' | 'other';
   age?: number;
   emoji?: string;
+  gold: number;
+  rpgClass?: 'warrior' | 'sorceress' | 'mystic';
+  skillPoints: number;
+  unlockedPerks: string[];
   goal?: string;
   settings: UserSettings;
 }
@@ -71,6 +76,9 @@ export interface Mission {
   description: string;
   rewardXp: number;
   completed: boolean;
+  type?: 'bounty' | 'boss' | 'quest';
+  bossHp?: number;
+  bossMaxHp?: number;
 }
 
 export type NotificationType = 'habit' | 'reminder' | 'achievement';

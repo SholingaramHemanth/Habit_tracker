@@ -72,10 +72,10 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       <motion.div className="fixed inset-0 z-0">
         <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 30, repeat: Infinity, ease: "linear" }} className="w-full h-full" style={{ willChange: 'transform' }}>
           <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1920&auto=format&fit=crop"
-            className={cn("w-full h-full object-cover", theme === 'dark' ? "brightness-[0.25]" : "brightness-[0.75]")} alt="bg" fetchPriority="high" />
+            className={cn("w-full h-full object-cover", theme === 'dark' ? "brightness-[0.25]" : "brightness-[0.85]")} alt="bg" fetchPriority="high" />
         </motion.div>
       </motion.div>
-      <div className={cn("fixed inset-0 z-[1]", theme === 'dark' ? "bg-gradient-to-b from-black/50 via-transparent to-black" : "bg-gradient-to-b from-white/40 via-transparent to-white/80")} />
+      <div className={cn("fixed inset-0 z-[1]", theme === 'dark' ? "bg-gradient-to-b from-black/50 via-transparent to-black" : "bg-gradient-to-b from-white/20 via-transparent to-white/70")} />
 
       {/* Particles */}
       <div className="fixed inset-0 z-[2] pointer-events-none overflow-hidden">
@@ -96,48 +96,55 @@ export function LandingPage({ onLogin }: LandingPageProps) {
       </div>
 
       {/* ═══ SECTION 1: HERO ═══ */}
-      <motion.section className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6 text-center" style={{ opacity: heroOpacity }}>
-        <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} className="space-y-8">
-          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/[0.03] border border-white/[0.08] text-primary-light text-xs font-bold uppercase tracking-[0.2em] backdrop-blur-md breathing-border">
-            <motion.div animate={{ rotate: 360, scale: [1, 1.3, 1] }} transition={{ rotate: { duration: 3, repeat: Infinity, ease: 'linear' }, scale: { duration: 1.5, repeat: Infinity } }}>
-              <Zap className="w-3.5 h-3.5 fill-current" />
+      <motion.section className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6 text-center perspective-[1000px]" style={{ opacity: heroOpacity }}>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 animate-parallax-slow pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
+        
+        <motion.div initial={{ opacity: 0, y: 80, rotateX: 20 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }} className="space-y-10 relative z-10">
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, duration: 1 }}
+            className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-black/40 border border-primary/30 text-primary-light text-xs font-black uppercase tracking-[0.3em] backdrop-blur-xl shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+            <motion.div animate={{ rotate: 360, scale: [1, 1.4, 1] }} transition={{ rotate: { duration: 4, repeat: Infinity, ease: 'linear' }, scale: { duration: 2, repeat: Infinity } }}>
+              <Zap className="w-4 h-4 text-[#d4af37] drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
             </motion.div>
-            <span>The New Standard in Discipline</span>
+            <span className="text-liquid-gold">The Zenith of Discipline</span>
+            <motion.div animate={{ rotate: -360, scale: [1, 1.4, 1] }} transition={{ rotate: { duration: 4, repeat: Infinity, ease: 'linear' }, scale: { duration: 2, repeat: Infinity } }}>
+              <Zap className="w-4 h-4 text-[#d4af37] drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
+            </motion.div>
           </motion.div>
 
-          <h1 className="text-7xl md:text-[10rem] font-black tracking-tighter leading-[0.85] text-foreground">
-            <motion.span className="block text-gradient neon-gold" initial={{ opacity: 0, y: 80, rotateX: 40 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: 0.3, duration: 1, ease: [0.22, 1, 0.36, 1] }}>
+          <h1 className="text-7xl md:text-[12rem] font-black tracking-tighter leading-[0.85] text-foreground relative">
+            <motion.span className={cn("block text-liquid-gold", theme === 'dark' ? "drop-shadow-[0_10px_40px_rgba(212,175,55,0.4)]" : "drop-shadow-[0_4px_15px_rgba(255,255,255,0.9)]")} initial={{ opacity: 0, y: 100, rotateX: 40 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: 0.4, duration: 1.2, ease: [0.22, 1, 0.36, 1] }} style={{ fontFamily: 'Cinzel, serif' }}>
               UNLEASH
             </motion.span>
-            <motion.span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent"
-              initial={{ opacity: 0, y: 80, rotateX: 40 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: 0.6, duration: 1, ease: [0.22, 1, 0.36, 1] }}>
+            <motion.span className={cn("block text-aura-gradient", theme === 'dark' ? "drop-shadow-[0_10px_40px_rgba(139,92,246,0.5)]" : "drop-shadow-[0_4px_15px_rgba(255,255,255,0.9)]")}
+              initial={{ opacity: 0, y: 100, rotateX: -40 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: 0.7, duration: 1.2, ease: [0.22, 1, 0.36, 1] }} style={{ fontFamily: 'Inter, sans-serif' }}>
               YOUR AURA
             </motion.span>
           </h1>
 
-          <div className="h-10 overflow-hidden">
+          <div className="h-12 overflow-hidden relative">
             <AnimatePresence mode="wait">
-              <motion.div key={activeWord} initial={{ y: 40, opacity: 0, filter: 'blur(8px)' }} animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }} exit={{ y: -40, opacity: 0, filter: 'blur(8px)' }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="text-xl md:text-2xl font-black uppercase tracking-[0.5em] text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
+              <motion.div key={activeWord} initial={{ y: 50, opacity: 0, filter: 'blur(10px)', scale: 1.2 }} animate={{ y: 0, opacity: 1, filter: 'blur(0px)', scale: 1 }} exit={{ y: -50, opacity: 0, filter: 'blur(10px)', scale: 0.8 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className={cn("text-2xl md:text-3xl font-black uppercase tracking-[0.6em] text-aura-gradient", theme === 'dark' ? "drop-shadow-[0_0_15px_rgba(139,92,246,0.8)]" : "drop-shadow-[0_4px_15px_rgba(255,255,255,0.9)]")}>
                 {words[activeWord]}
               </motion.div>
             </AnimatePresence>
           </div>
 
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-            className="text-xl md:text-2xl text-foreground/40 max-w-3xl mx-auto font-medium leading-relaxed">
-            The world's most addictive habit tracker. <br className="hidden md:block" />
-            Gamified routines. Real-time feedback. Legendary results.
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2, duration: 1 }}
+            className="text-xl md:text-2xl text-foreground/50 max-w-4xl mx-auto font-medium leading-relaxed drop-shadow-md">
+            The world's most immersive habit tracker. <br className="hidden md:block" />
+            <span className="text-foreground/80">Gamified routines. Real-time feedback. Legendary results.</span>
           </motion.p>
         </motion.div>
 
         {/* Scroll indicator */}
-        <motion.div className="absolute bottom-12 left-1/2 flex flex-col items-center gap-3" animate={{ y: [0, 12, 0], opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
-          <span className="text-[10px] font-bold text-foreground/30 uppercase tracking-[0.3em]">Scroll to Enter</span>
-          <ChevronDown className="w-6 h-6 text-secondary/60" />
+        <motion.div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-20" animate={{ y: [0, 15, 0], opacity: [0.4, 1, 0.4] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}>
+          <div className="w-px h-16 bg-gradient-to-b from-transparent via-secondary to-transparent" />
+          <span className="text-[10px] font-black text-secondary uppercase tracking-[0.4em] drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]">Descend</span>
+          <ChevronDown className="w-8 h-8 text-secondary drop-shadow-[0_0_15px_rgba(6,182,212,0.8)]" />
         </motion.div>
       </motion.section>
 
@@ -156,19 +163,31 @@ export function LandingPage({ onLogin }: LandingPageProps) {
               { icon: Target, title: 'PRECISION GOALS', desc: 'Set surgical targets and watch as your habits compound into unstoppable momentum.', color: 'secondary', num: '03' },
             ].map((f, i) => (
               <ScrollReveal key={f.title} delay={i * 0.15}>
-                <GlassCard className="h-full p-8 text-left group hover-lift" hover={true}>
-                  <div className="flex items-start justify-between mb-6">
-                    <motion.div className={`p-4 bg-${f.color}/10 rounded-2xl`} animate={{ rotate: [0, 5, -5, 0] }} transition={{ duration: 4, repeat: Infinity, delay: i * 0.5 }}>
-                      <f.icon className={`w-8 h-8 text-${f.color}`} />
+                <GlassCard className="h-full p-8 text-left group hover-lift relative overflow-hidden" hover={true} glow="gold">
+                  {/* Magical Parchment Overlay */}
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/aged-paper.png')] opacity-[0.03] mix-blend-overlay pointer-events-none" />
+                  <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-[40px] group-hover:scale-150 transition-transform duration-700" />
+                  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
+                  
+                  <div className="flex items-start justify-between mb-6 relative z-10">
+                    <motion.div 
+                      className={`p-4 bg-${f.color}/10 rounded-2xl border border-${f.color}/20 shadow-[0_0_20px_rgba(var(--${f.color}),0.2)]`} 
+                      animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.05, 1] }} 
+                      transition={{ duration: 4, repeat: Infinity, delay: i * 0.5 }}
+                    >
+                      <f.icon className={`w-8 h-8 text-${f.color} drop-shadow-[0_0_8px_currentColor]`} />
                     </motion.div>
-                    <div className="text-4xl font-black text-white/10 group-hover:text-white/20 transition-colors">{f.num}</div>
+                    <div className="text-5xl font-black text-white/5 group-hover:text-primary/20 transition-colors" style={{ fontFamily: 'Cinzel, serif' }}>{f.num}</div>
                   </div>
-                  <h3 className="text-xl font-black text-foreground mb-2 animated-underline">{f.title}</h3>
-                  <p className="text-foreground/40 font-medium">{f.desc}</p>
-                  <div className="mt-6 h-1 rounded-full bg-white/5 overflow-hidden">
-                    <motion.div className="h-full bg-gradient-to-r from-primary via-secondary to-primary rounded-full"
+                  <h3 className="text-xl font-black text-foreground mb-3 text-liquid-gold" style={{ fontFamily: 'Cinzel, serif' }}>{f.title}</h3>
+                  <p className="text-foreground/50 font-medium leading-relaxed relative z-10">{f.desc}</p>
+                  
+                  <div className="mt-8 h-1.5 rounded-full bg-white/5 overflow-hidden relative border border-white/5">
+                    <motion.div className="h-full bg-gradient-to-r from-primary via-secondary to-primary rounded-full relative"
                       initial={{ width: '0%' }} whileInView={{ width: `${60 + i * 15}%` }} transition={{ delay: 0.5, duration: 1.5, ease: 'easeOut' }}
-                      viewport={{ once: true }} />
+                      viewport={{ once: true }}>
+                      <div className="absolute inset-0 bg-white/30 animate-pulse" />
+                    </motion.div>
                   </div>
                 </GlassCard>
               </ScrollReveal>
@@ -205,99 +224,123 @@ export function LandingPage({ onLogin }: LandingPageProps) {
 
         <ScrollReveal className="w-full max-w-md">
           <motion.div className="text-center mb-10" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }}>
-            <h2 className="text-4xl md:text-5xl font-black text-foreground neon-gold tracking-tight">ENTER THE VOID</h2>
-            <div className="mt-3 h-[2px] w-32 mx-auto bg-gradient-to-r from-transparent via-secondary to-transparent" />
+            <motion.div 
+              className="inline-flex items-center justify-center p-3 rounded-full mb-4 bg-primary/10 border border-primary/20"
+              animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Lock className="w-8 h-8 text-primary drop-shadow-[0_0_15px_rgba(200,16,46,0.8)]" />
+            </motion.div>
+            <h2 className="text-4xl md:text-5xl font-black text-liquid-gold tracking-tighter" style={{ fontFamily: 'Cinzel, serif', textShadow: '0 0 20px rgba(212,175,55,0.4)' }}>THE GRIMOIRE</h2>
+            <p className="mt-3 text-[10px] font-bold text-foreground/40 uppercase tracking-[0.4em]">Unlock your destiny</p>
+            <div className="mt-4 h-[2px] w-32 mx-auto bg-gradient-to-r from-transparent via-secondary to-transparent" />
           </motion.div>
 
-          <GlassCard className="p-10 space-y-10 border-card-border shadow-2xl animate-portal-pulse" hover={false}>
-            <motion.div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-secondary to-transparent" animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 3, repeat: Infinity }} />
+          <GlassCard className="p-10 md:p-12 space-y-10 shadow-2xl animate-portal-pulse" hover={false} glow="gold">
+            {/* Ornate corner accents */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-secondary/60 rounded-tl-xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-secondary/60 rounded-tr-xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-secondary/60 rounded-bl-xl pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-secondary/60 rounded-br-xl pointer-events-none" />
+
+            <motion.div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-secondary to-transparent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 3, repeat: Infinity }} />
 
             <AnimatePresence mode="wait">
               {step === 'auth' ? (
-                <motion.div key="auth" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-8">
-                  <div className="text-center space-y-3">
-                    <motion.div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
-                      style={{ background: 'linear-gradient(135deg, rgba(200,16,46,0.15), rgba(212,175,55,0.1))', border: '1px solid rgba(212,175,55,0.2)' }}
-                      animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.05, 1] }} transition={{ duration: 4, repeat: Infinity }}>
-                      <Shield className="w-7 h-7 text-secondary" />
+                <motion.div key="auth" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-8">
+                  <div className="text-center space-y-4">
+                    <motion.div className="mx-auto w-16 h-16 relative flex items-center justify-center mb-6"
+                      animate={{ y: [0, -5, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+                      <motion.div className="absolute inset-0 border border-secondary/30 rotate-45 rounded-lg" animate={{ rotate: [45, 225] }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} />
+                      <motion.div className="absolute inset-2 border border-primary/30 rotate-12 rounded-lg" animate={{ rotate: [12, -168] }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} />
+                      <div className="absolute inset-0 bg-gradient-to-br from-secondary/20 to-primary/20 blur-md rounded-full" />
+                      <Shield className="w-6 h-6 text-secondary relative z-10 drop-shadow-[0_0_10px_rgba(212,175,55,0.8)]" />
                     </motion.div>
-                    <h3 className="text-3xl font-black tracking-tighter text-foreground uppercase italic">{isLogin ? 'Sign In' : 'Join Aura'}</h3>
-                    <p className="text-foreground/40 text-xs uppercase tracking-widest">{isLogin ? 'Synchronize your energy' : 'Initialize your soul frequency'}</p>
+                    <h3 className="text-2xl font-black tracking-widest text-foreground uppercase" style={{ fontFamily: 'Cinzel, serif' }}>{isLogin ? 'Enter The Realm' : 'Forge Your Soul'}</h3>
+                    <p className="text-foreground/40 text-[10px] uppercase tracking-[0.3em]">{isLogin ? 'Synchronize your energy' : 'Initialize your frequency'}</p>
                   </div>
 
-                  <form className="space-y-5" onSubmit={handleSubmit}>
+                  <form className="space-y-6" onSubmit={handleSubmit}>
                     {!isLogin && (
-                      <motion.div className="space-y-2" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                        <label className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em] ml-1">Full Name</label>
-                        <div className="relative">
-                          <User className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors", focusedField === 'name' ? 'text-secondary' : 'text-foreground/20')} />
-                          <input type="text" placeholder="Alex Hunter" onFocus={() => setFocusedField('name')} onBlur={() => setFocusedField(null)}
-                            className="w-full bg-white/[0.03] border border-card-border rounded-2xl py-4 pl-12 pr-4 text-foreground placeholder:text-foreground/10 focus:outline-none focus:border-secondary/50 focus:shadow-[0_0_20px_rgba(212,175,55,0.1)] transition-all" />
-                        </div>
+                      <motion.div className="relative group" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                        <User className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-all z-10", focusedField === 'name' ? 'text-secondary drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]' : 'text-foreground/20')} />
+                        <input type="text" id="name" required={!isLogin} onFocus={() => setFocusedField('name')} onBlur={() => setFocusedField(null)}
+                          className="peer w-full bg-black/40 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-foreground placeholder-transparent focus:outline-none focus:bg-black/60 transition-all shadow-inner" placeholder="Full Name" />
+                        <label htmlFor="name" className="absolute left-12 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:text-foreground/30 peer-placeholder-shown:top-1/2 peer-focus:top-3 peer-focus:text-[10px] peer-focus:text-secondary pointer-events-none">
+                          Full Name
+                        </label>
+                        <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-secondary to-transparent w-full scale-x-0 peer-focus:scale-x-100 transition-transform duration-500 origin-left" />
                       </motion.div>
                     )}
-                    <motion.div className="space-y-2" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-                      <label className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em] ml-1">Email</label>
-                      <div className="relative">
-                        <Mail className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors", focusedField === 'email' ? 'text-secondary' : 'text-foreground/20')} />
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)}
-                          placeholder="alex@aura.io" required
-                          className="w-full bg-white/[0.03] border border-card-border rounded-2xl py-4 pl-12 pr-4 text-foreground placeholder:text-foreground/10 focus:outline-none focus:border-secondary/50 focus:shadow-[0_0_20px_rgba(212,175,55,0.1)] transition-all" />
-                      </div>
+                    <motion.div className="relative group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                      <Mail className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-all z-10", focusedField === 'email' ? 'text-secondary drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]' : 'text-foreground/20')} />
+                      <input type="email" id="email" value={email} onChange={e => setEmail(e.target.value)} onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)} required
+                        className="peer w-full bg-black/40 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-foreground placeholder-transparent focus:outline-none focus:bg-black/60 transition-all shadow-inner" placeholder="Email Address" />
+                      <label htmlFor="email" className="absolute left-12 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:text-foreground/30 peer-placeholder-shown:top-1/2 peer-focus:top-3 peer-focus:text-[10px] peer-focus:text-secondary pointer-events-none">
+                        Email Address
+                      </label>
+                      <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-secondary to-transparent w-full scale-x-0 peer-focus:scale-x-100 transition-transform duration-500 origin-left" />
                     </motion.div>
-                    <motion.div className="space-y-2" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-                      <label className="text-[10px] font-black text-foreground/30 uppercase tracking-[0.2em] ml-1">Password</label>
-                      <div className="relative">
-                        <Lock className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors", focusedField === 'pw' ? 'text-secondary' : 'text-foreground/20')} />
-                        <input type="password" placeholder="••••••••" required onFocus={() => setFocusedField('pw')} onBlur={() => setFocusedField(null)}
-                          className="w-full bg-white/[0.03] border border-card-border rounded-2xl py-4 pl-12 pr-4 text-foreground placeholder:text-foreground/10 focus:outline-none focus:border-secondary/50 focus:shadow-[0_0_20px_rgba(212,175,55,0.1)] transition-all" />
-                      </div>
+                    <motion.div className="relative group" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                      <Lock className={cn("absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-all z-10", focusedField === 'pw' ? 'text-secondary drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]' : 'text-foreground/20')} />
+                      <input type="password" id="password" required onFocus={() => setFocusedField('pw')} onBlur={() => setFocusedField(null)}
+                        className="peer w-full bg-black/40 border border-white/5 rounded-xl py-4 pl-12 pr-4 text-foreground placeholder-transparent focus:outline-none focus:bg-black/60 transition-all shadow-inner" placeholder="Password" />
+                      <label htmlFor="password" className="absolute left-12 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:text-foreground/30 peer-placeholder-shown:top-1/2 peer-focus:top-3 peer-focus:text-[10px] peer-focus:text-secondary pointer-events-none">
+                        Password
+                      </label>
+                      <div className="absolute bottom-0 left-0 h-[2px] bg-gradient-to-r from-transparent via-secondary to-transparent w-full scale-x-0 peer-focus:scale-x-100 transition-transform duration-500 origin-left" />
                     </motion.div>
-                    <motion.button type="submit" disabled={isSubmitting} whileHover={{ scale: 1.02, boxShadow: '0 0 40px rgba(212,175,55,0.2)' }} whileTap={{ scale: 0.98 }}
-                      className="w-full py-5 bg-foreground text-background font-black rounded-2xl flex items-center justify-center gap-3 relative overflow-hidden ripple-button disabled:opacity-70">
-                      <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" animate={{ x: ['-200%', '200%'] }} transition={{ duration: 3, repeat: Infinity, ease: 'linear' }} />
-                      <span className="relative z-10 flex items-center gap-3">
+                    
+                    <motion.button type="submit" disabled={isSubmitting} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="dnd-button w-full py-4 mt-2 rounded-xl flex items-center justify-center gap-3 relative overflow-hidden ripple-button disabled:opacity-70 group">
+                      <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" animate={{ x: ['-200%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }} />
+                      <span className="relative z-10 flex items-center gap-3 font-black tracking-widest text-sm">
                         {isSubmitting ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}><Sparkles className="w-5 h-5" /></motion.div>
-                          : <>{isLogin ? 'SEND OTP' : 'CREATE ACCOUNT'} <ArrowRight className="w-5 h-5" /></>}
+                          : <>{isLogin ? 'INVOKE' : 'AWAKEN'} <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /></>}
                       </span>
                     </motion.button>
                   </form>
-                  <motion.button onClick={() => setIsLogin(!isLogin)} whileHover={{ scale: 1.02 }}
-                    className="w-full text-xs font-bold text-foreground/20 hover:text-foreground uppercase tracking-widest transition-all animated-underline">
-                    {isLogin ? "New to Aura? Create Account" : "Back to Sign In"}
-                  </motion.button>
+                  <div className="text-center">
+                    <motion.button onClick={() => setIsLogin(!isLogin)} whileHover={{ scale: 1.05 }}
+                      className="text-[10px] font-bold text-foreground/40 hover:text-secondary uppercase tracking-[0.2em] transition-colors animated-underline py-1">
+                      {isLogin ? "New to Aura? Forge an Account" : "Return to the Void (Sign In)"}
+                    </motion.button>
+                  </div>
                 </motion.div>
               ) : (
-                <motion.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
-                  <div className="text-center space-y-3">
-                    <motion.div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
-                      style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(200,16,46,0.1))', border: '1px solid rgba(124,58,237,0.2)' }}
-                      animate={{ scale: [1, 1.1, 1], rotate: [0, 3, -3, 0] }} transition={{ duration: 3, repeat: Infinity }}>
-                      <Lock className="w-7 h-7 text-accent" />
+                <motion.div key="otp" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-8">
+                  <div className="text-center space-y-4">
+                    <motion.div className="mx-auto w-16 h-16 relative flex items-center justify-center mb-6"
+                      animate={{ y: [0, -5, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+                      <motion.div className="absolute inset-0 border border-primary/30 rotate-45 rounded-lg" animate={{ rotate: [-45, -225] }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} />
+                      <motion.div className="absolute inset-2 border border-accent/30 rotate-12 rounded-lg" animate={{ rotate: [-12, 168] }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} />
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 blur-md rounded-full" />
+                      <Lock className="w-6 h-6 text-primary relative z-10 drop-shadow-[0_0_10px_rgba(200,16,46,0.8)]" />
                     </motion.div>
-                    <h3 className="text-3xl font-black tracking-tighter text-foreground uppercase italic">Verify Aura</h3>
-                    <p className="text-foreground/40 text-xs uppercase leading-relaxed">Code sent to <span className="text-primary font-bold">{email}</span></p>
+                    <h3 className="text-2xl font-black tracking-widest text-foreground uppercase" style={{ fontFamily: 'Cinzel, serif' }}>Verify Seal</h3>
+                    <p className="text-foreground/40 text-[10px] uppercase tracking-[0.2em] leading-relaxed">Scroll sent to <br/><span className="text-secondary font-bold tracking-widest">{email}</span></p>
                   </div>
                   <form className="space-y-8" onSubmit={handleOtp}>
-                    <div className="flex justify-between gap-4">
+                    <div className="flex justify-center gap-3 sm:gap-4">
                       {otp.map((d, idx) => (
-                        <motion.div key={idx} initial={{ opacity: 0, y: 20, scale: 0.8 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.1 + idx * 0.1, type: 'spring', stiffness: 200 }}>
+                        <motion.div key={idx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + idx * 0.1, type: 'spring' }}>
                           <input id={`otp-${idx}`} type="text" maxLength={1} value={d}
                             onChange={e => { const v = e.target.value; if (/^\d?$/.test(v)) { const n = [...otp]; n[idx] = v; setOtp(n); if (v && idx < 3) document.getElementById(`otp-${idx+1}`)?.focus(); } }}
-                            className={cn("w-16 h-20 bg-white/[0.03] border rounded-2xl text-3xl font-black text-center text-foreground focus:outline-none transition-all",
-                              d ? "border-secondary/50 shadow-[0_0_20px_rgba(212,175,55,0.15)]" : "border-card-border", "focus:border-primary focus:shadow-[0_0_25px_rgba(200,16,46,0.2)]")} />
+                            className={cn("w-14 h-16 sm:w-16 sm:h-20 bg-black/40 border-b-2 rounded-t-xl text-3xl font-black text-center text-foreground focus:outline-none transition-all shadow-inner",
+                              d ? "border-secondary text-secondary drop-shadow-[0_0_10px_rgba(212,175,55,0.5)] bg-secondary/5" : "border-white/10", "focus:border-primary focus:bg-primary/5 focus:drop-shadow-[0_0_15px_rgba(200,16,46,0.5)]")} />
                         </motion.div>
                       ))}
                     </div>
                     <motion.button type="submit" disabled={isSubmitting} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                      className="w-full py-5 bg-primary text-white font-black rounded-2xl flex items-center justify-center gap-3 relative overflow-hidden ripple-button disabled:opacity-70">
-                      <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" animate={{ x: ['-200%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity }} />
-                      <span className="relative z-10 flex items-center gap-3">
+                      className="dnd-button w-full py-4 rounded-xl flex items-center justify-center gap-3 relative overflow-hidden ripple-button disabled:opacity-70 group">
+                      <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" animate={{ x: ['-200%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity }} />
+                      <span className="relative z-10 flex items-center gap-3 font-black tracking-widest text-sm">
                         {isSubmitting ? <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}><Sparkles className="w-5 h-5" /></motion.div>
-                          : <>VERIFY & ENTER <Zap className="w-5 h-5 fill-current" /></>}
+                          : <>BREAK SEAL <Zap className="w-5 h-5 fill-current group-hover:scale-110 transition-transform" /></>}
                       </span>
                     </motion.button>
-                    <button type="button" onClick={() => setStep('auth')} className="w-full text-xs font-bold text-foreground/20 hover:text-foreground uppercase tracking-widest transition-all">Change Email</button>
+                    <div className="text-center">
+                      <button type="button" onClick={() => setStep('auth')} className="text-[10px] font-bold text-foreground/40 hover:text-primary uppercase tracking-[0.2em] transition-colors animated-underline py-1">Rewrite Scroll (Change Email)</button>
+                    </div>
                   </form>
                 </motion.div>
               )}

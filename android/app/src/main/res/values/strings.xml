@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Aura Habit Tracker</string>
+    <string name="title_activity_main">Aura Habit Tracker</string>
+    <string name="package_name">com.aurahabittracker.app</string>
+    <string name="custom_url_scheme">com.aurahabittracker.app</string>
+</resources>

@@ -11,6 +11,7 @@ interface SidebarProps {
 const menuItems = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'SANCTUM',   sub: 'Home Base' },
   { id: 'habits',    icon: CheckSquare,    label: 'QUESTS',     sub: 'Daily Rites' },
+  { id: 'treasury',  icon: Sword,          label: 'TREASURY',   sub: 'Upgrades' },
   { id: 'stats',     icon: BarChart2,      label: 'CHRONICLES', sub: 'Your Legend' },
   { id: 'profile',   icon: User,           label: 'CHARACTER',  sub: 'Your Soul' },
   { id: 'settings',  icon: Settings,       label: 'ARCANA',     sub: 'Configure' },
@@ -21,6 +22,14 @@ const SIDEBAR_PARTICLES = Array.from({ length: 8 }, (_, i) => ({
   delay: i * 1.5,
   duration: 8 + Math.random() * 6,
   size: 1 + Math.random() * 2,
+}));
+
+const FLOATING_RUNES = Array.from({ length: 5 }, (_, i) => ({
+  x: 10 + Math.random() * 220,
+  char: ['✧', '✦', '⚝', '✶', '✵'][i % 5],
+  delay: i * 2,
+  duration: 15 + Math.random() * 10,
+  size: 14 + Math.random() * 8,
 }));
 
 export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
@@ -54,7 +63,7 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
         {/* ══════ NEW: Floating micro particles ══════ */}
         {SIDEBAR_PARTICLES.map((p, i) => (
           <motion.div
-            key={i}
+            key={`p-${i}`}
             className="absolute rounded-full"
             style={{
               width: p.size,
@@ -76,6 +85,36 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
               ease: 'easeOut',
             }}
           />
+        ))}
+
+        {/* ══════ NEW: Floating Runes ══════ */}
+        {FLOATING_RUNES.map((r, i) => (
+          <motion.div
+            key={`r-${i}`}
+            className="absolute font-black pointer-events-none mix-blend-screen"
+            style={{
+              fontSize: r.size,
+              left: r.x,
+              bottom: '-20px',
+              color: '#ffd700',
+              textShadow: '0 0 10px rgba(212,175,55,0.6)',
+              fontFamily: 'Cinzel, serif',
+            }}
+            animate={{
+              y: [0, -800],
+              opacity: [0, 0.3, 0],
+              rotate: [0, 180, 360],
+              x: [0, Math.cos(i) * 30],
+            }}
+            transition={{
+              duration: r.duration,
+              repeat: Infinity,
+              delay: r.delay,
+              ease: 'linear',
+            }}
+          >
+            {r.char}
+          </motion.div>
         ))}
 
         {/* Vertical gold divider line */}
@@ -135,16 +174,17 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
           />
         </div>
 
-        <div className="text-center">
+        <div className="text-center relative">
+          <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-8 bg-secondary/20 blur-xl rounded-full pointer-events-none" animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.8, 0.5] }} transition={{ duration: 3, repeat: Infinity }} />
           <motion.div
-            className="text-xl font-black tracking-[0.3em] uppercase"
-            style={{ fontFamily: 'Cinzel, serif', color: '#d4af37', textShadow: '0 0 20px rgba(212,175,55,0.5)' }}
-            animate={{ textShadow: ['0 0 20px rgba(212,175,55,0.3)', '0 0 30px rgba(212,175,55,0.7)', '0 0 20px rgba(212,175,55,0.3)'] }}
+            className="text-2xl font-black tracking-[0.4em] uppercase relative z-10"
+            style={{ fontFamily: 'Cinzel, serif', color: '#ffd700', backgroundImage: 'linear-gradient(to right, #b8960c, #ffd700, #fff8b0)', WebkitBackgroundClip: 'text', color: 'transparent' }}
+            animate={{ textShadow: ['0 0 20px rgba(212,175,55,0.4)', '0 0 40px rgba(212,175,55,0.8)', '0 0 20px rgba(212,175,55,0.4)'] }}
             transition={{ duration: 4, repeat: Infinity }}
           >
             AURA
           </motion.div>
-          <div className="text-[8px] tracking-[0.4em] uppercase text-[rgba(232,213,176,0.4)] mt-0.5"
+          <div className="text-[8px] tracking-[0.4em] uppercase text-foreground/40 mt-0.5"
                style={{ fontFamily: 'Cinzel, serif' }}>
             The Legend Begins
           </div>
@@ -177,7 +217,7 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
               whileTap={{ scale: 0.97 }}
               className={cn(
                 'w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 group relative overflow-hidden text-left',
-                isActive ? 'text-[#d4af37]' : 'text-[rgba(232,213,176,0.35)] hover:text-[rgba(232,213,176,0.75)]'
+                isActive ? 'text-secondary' : 'text-foreground/40 hover:text-foreground/80'
               )}
             >
               {/* Active bg */}
@@ -273,10 +313,7 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
         onClick={onLogout}
         whileHover={{ x: -4, backgroundColor: 'rgba(200,16,46,0.05)' }}
         whileTap={{ scale: 0.97 }}
-        className="relative z-10 w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group"
-        style={{ color: 'rgba(200,16,46,0.4)' }}
-        onMouseEnter={e => (e.currentTarget.style.color = '#c8102e')}
-        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(200,16,46,0.4)')}
+        className="relative z-10 w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all group text-primary/40 hover:text-primary"
       >
         <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
         <span className="text-[10px] font-black tracking-[0.25em] uppercase" style={{ fontFamily: 'Cinzel, serif' }}>

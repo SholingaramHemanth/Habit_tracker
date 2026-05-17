@@ -4,12 +4,20 @@ import { HabitList } from '@/src/components/dashboard/HabitList';
 import { StatsGrid } from '@/src/components/dashboard/StatsGrid';
 import { SettingsView } from '@/src/components/dashboard/SettingsView';
 import { NotificationPanel } from '@/src/components/dashboard/NotificationPanel';
+import { AchievementBadges } from '@/src/components/dashboard/AchievementBadges';
+import { WeeklyReport } from '@/src/components/dashboard/WeeklyReport';
+import { SkillTree } from '@/src/components/dashboard/SkillTree';
+import { ItemShop } from '@/src/components/dashboard/ItemShop';
+import { BossBattle } from '@/src/components/dashboard/BossBattle';
+import { DailyBounties } from '@/src/components/dashboard/DailyBounties';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { GlassCard } from '@/src/components/ui/GlassCard';
 import { Habit, User, Mission, Notification } from '@/src/types';
 import { Bell, Search, Trophy, Star, Zap, BellOff, Shield, BookOpen, Clock, Activity, Hexagon } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react';
 import { cn } from '@/src/lib/utils';
+import { useTheme } from '@/src/context/ThemeContext';
+import { playLevelUp, playButtonClick, playToggle } from '@/src/lib/sounds';
 import confetti from 'canvas-confetti';
 
 const EMBER_COLORS = ['#d4af37', '#c8102e', '#ff8c42', '#d4af37', '#e8d5b0'];
@@ -23,17 +31,13 @@ const EMBER_PARTICLES = Array.from({ length: 20 }, (_, i) => ({
   delay:    (i * 23) % 8,
 }));
 
-const BACKGROUND_IMAGES = [
-  // Elegant High-Res Nature
-  'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?q=80&w=2500&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2500&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2500&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=2500&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1470071131384-001b85755536?q=80&w=2500&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1426604966848-d7adac402bff?q=80&w=2500&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1505820013142-f86a3439c5b2?q=80&w=2500&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?q=80&w=2500&auto=format&fit=crop'
-];
+const REALM_BACKGROUNDS = {
+  light: 'https://images.unsplash.com/photo-1542224566-6e85f2e6772f?q=80&w=2500&auto=format&fit=crop',
+  dark: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2500&auto=format&fit=crop',
+  void: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=2500&auto=format&fit=crop', // Dark starry/galaxy
+  forest: 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2500&auto=format&fit=crop', // Elven forest
+  forge: 'https://images.unsplash.com/photo-1536640712-4d4c36ef0e47?q=80&w=2500&auto=format&fit=crop' // Molten lava/forge
+};
 
 const INITIAL_HABITS: Habit[] = [];
 
@@ -80,6 +84,10 @@ const INITIAL_USER: User = {
   level: 1,
   xp: 0,
   xpToNextLevel: 100,
+  gold: 0,
+  skillPoints: 0,
+  unlockedPerks: [],
+  rpgClass: 'warrior',
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=new_soul&baseColor=transparent',
   goal: 'Unleash full potential',
   settings: {
@@ -130,6 +138,7 @@ const INITIAL_USER: User = {
 };
 
 export function Dashboard({ onLogout }: DashboardProps) {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [statsMode, setStatsMode] = useState<'week' | 'month'>('week');
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -159,7 +168,17 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [isSettingUp, setIsSettingUp] = useState(() => !user.gender);
 
-  const [bgImage] = useState(() => BACKGROUND_IMAGES[Math.floor(Math.random() * BACKGROUND_IMAGES.length)]);
+  const [missions, setMissions] = useState<Mission[]>(() => {
+    const saved = localStorage.getItem('aura_missions');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: 'b1', type: 'bounty', description: 'Drink 2L of water', rewardXp: 50, completed: false },
+      { id: 'b2', type: 'bounty', description: 'Meditate for 10 minutes', rewardXp: 75, completed: false },
+      { id: 'boss1', type: 'boss', description: 'Sloth Demon', rewardXp: 500, completed: false, bossHp: 500, bossMaxHp: 500 }
+    ];
+  });
+
+  const bgImage = REALM_BACKGROUNDS[user.settings.realm as keyof typeof REALM_BACKGROUNDS] || REALM_BACKGROUNDS[theme as 'dark' | 'light'] || REALM_BACKGROUNDS.dark;
   
   const currentAvatars = user.gender === 'female' ? femaleAvatars : maleAvatars;
 
@@ -254,6 +273,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
   }, [habits]);
 
   useEffect(() => {
+    localStorage.setItem('aura_missions', JSON.stringify(missions));
+  }, [missions]);
+
+  useEffect(() => {
     localStorage.setItem('aura_user', JSON.stringify(user));
     if (user.settings.accentColor) {
       document.documentElement.style.setProperty('--primary', user.settings.accentColor);
@@ -279,20 +302,91 @@ export function Dashboard({ onLogout }: DashboardProps) {
       if (h.id === id) {
         const newState = !h.completedToday;
         if (newState) {
-          const newXp = user.xp + 25;
+          // RPG Mechanics
+          let baseXp = 25;
+          if (user.unlockedPerks.includes('m1')) baseXp += 2; // Mystic: Astral Link
+          if (user.unlockedPerks.includes('w1') && h.streak > 0) baseXp = Math.floor(baseXp * 1.1); // Warrior: Iron Resolve
+          if (user.unlockedPerks.includes('s1') && new Date().getHours() < 9) baseXp += 5; // Sorceress: Arcane Focus
+
+          let goldEarned = 10;
+          if (user.unlockedPerks.includes('m3')) goldEarned = Math.floor(goldEarned * 1.2); // Mystic: Aura Bloom
+
+          const newXp = user.xp + baseXp;
+          let levelUp = false;
+          let newLevel = user.level;
+          let finalXp = newXp;
+
           if (newXp >= user.xpToNextLevel) {
-            setUser(u => ({ ...u, level: u.level + 1, xp: newXp - u.xpToNextLevel }));
+            newLevel++;
+            finalXp = newXp - user.xpToNextLevel;
+            levelUp = true;
+          }
+
+          setUser(u => ({ ...u, level: newLevel, xp: finalXp, gold: u.gold + goldEarned, skillPoints: levelUp ? u.skillPoints + 1 : u.skillPoints }));
+
+          if (levelUp) {
             setShowLevelUp(true);
             triggerConfetti();
+            playLevelUp();
             setTimeout(() => setShowLevelUp(false), 5000);
-          } else {
-            setUser(u => ({ ...u, xp: newXp }));
           }
+
+          // Deal Boss Damage
+          setMissions(prevMissions => prevMissions.map(m => {
+            if (m.type === 'boss' && m.bossHp && m.bossHp > 0 && !m.completed) {
+              const damage = user.unlockedPerks.includes('w3') ? 20 : 10; // Warrior: Berserker
+              const newHp = Math.max(0, m.bossHp - damage);
+              if (newHp === 0) {
+                // Boss Defeated!
+                setUser(u => ({ ...u, xp: u.xp + m.rewardXp, gold: u.gold + 100 }));
+                return { ...m, bossHp: newHp, completed: true };
+              }
+              return { ...m, bossHp: newHp };
+            }
+            return m;
+          }));
+
+        } else {
+          // Un-toggling habit (taking damage from boss)
+          setMissions(prevMissions => prevMissions.map(m => {
+            if (m.type === 'boss' && m.bossHp && !m.completed) {
+              const damage = 15; // Boss counter-attack
+              // In a real app we might subtract user HP here, but we will heal the boss for simplicity
+              return { ...m, bossHp: Math.min(m.bossMaxHp || 500, m.bossHp + damage) };
+            }
+            return m;
+          }));
         }
         return { ...h, completedToday: newState, streak: newState ? h.streak + 1 : Math.max(0, h.streak - 1) };
       }
       return h;
     }));
+  };
+
+  const handleCompleteBounty = (id: string) => {
+    setMissions(prev => prev.map(m => {
+      if (m.id === id && !m.completed) {
+        setUser(u => ({ ...u, xp: u.xp + m.rewardXp, gold: u.gold + 25 }));
+        return { ...m, completed: true };
+      }
+      return m;
+    }));
+  };
+
+  const handleUnlockPerk = (perkId: string) => {
+    setUser(u => ({
+      ...u,
+      unlockedPerks: [...u.unlockedPerks, perkId],
+      skillPoints: u.skillPoints - 1 // Simple cost assumption for now
+    }));
+  };
+
+  const handleSpendGold = (amount: number) => {
+    setUser(u => ({ ...u, gold: Math.max(0, u.gold - amount) }));
+  };
+
+  const handleAddCustomReward = (reward: any) => {
+    // Already handled locally in ItemShop, but can sync to User if needed
   };
 
   const markAsRead = (id: string) => {
@@ -324,14 +418,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
       {/* ── Original 3D Animated Nature Background (PRESERVED) ── */}
       <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none perspective-[1000px] bg-background">
         <motion.div
-          className="absolute inset-[-10%] w-[120%] h-[120%] bg-cover bg-center opacity-60 brightness-110"
+          className={cn("absolute inset-[-10%] w-[120%] h-[120%] bg-cover bg-center", theme === 'dark' ? "opacity-60 brightness-110" : "opacity-30 brightness-100 saturate-75")}
           style={{ backgroundImage: `url(${bgImage})`, willChange: 'transform' }}
           animate={{ rotateX: [2, -2, 2], rotateY: [-3, 3, -3], scale: [1, 1.1, 1], z: [0, 50, 0] }}
           transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
         />
-        {/* Dark fantasy vignette on top of nature image */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/75 to-transparent" />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(6,4,9,0.5) 100%)' }} />
+        {/* Vignette overlay — theme-aware */}
+        <div className={cn("absolute inset-0", theme === 'dark' ? "bg-gradient-to-t from-background via-background/75 to-transparent" : "bg-gradient-to-t from-background via-background/85 to-background/40")} />
+        <div className="absolute inset-0" style={{ background: theme === 'dark' ? 'radial-gradient(ellipse at center, transparent 40%, rgba(6,4,9,0.5) 100%)' : 'radial-gradient(ellipse at center, transparent 50%, rgba(200,180,150,0.15) 100%)' }} />
       </div>
 
       {/* ── Floating Ember Particles (D&D style, over background) ── */}
@@ -377,42 +471,54 @@ export function Dashboard({ onLogout }: DashboardProps) {
           transition={{ duration: 0.6, type: 'spring', stiffness: 200 }}
           className="relative z-10 flex items-center justify-between"
         >
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
+          <div className="space-y-1 relative">
+            <motion.div className="absolute -left-10 -top-10 w-32 h-32 bg-primary/20 blur-[40px] rounded-full pointer-events-none" animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 4, repeat: Infinity }} />
+            <div className="flex items-center gap-4 relative z-10">
               {/* Rotating gold diamond */}
-              <motion.div
-                animate={{ rotate: [0, 360] }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                className="w-2 h-2 rotate-45"
-                style={{ backgroundColor: '#d4af37', boxShadow: '0 0 10px rgba(212,175,55,0.9)' }}
-              />
+              <div className="relative w-3 h-3 flex items-center justify-center">
+                <motion.div
+                  animate={{ rotate: [0, 360] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-0 border border-primary/50"
+                  style={{ boxShadow: '0 0 10px rgba(139,92,246,0.6)' }}
+                />
+                <motion.div
+                  animate={{ rotate: [0, -360] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
+                  className="w-2 h-2 bg-secondary"
+                  style={{ boxShadow: '0 0 10px rgba(6,182,212,0.9)' }}
+                />
+              </div>
               <h1
-                className="text-2xl font-black uppercase tracking-[0.2em]"
-                style={{ fontFamily: 'Cinzel, serif', color: '#d4af37', textShadow: '0 0 20px rgba(212,175,55,0.4)' }}
+                className="text-3xl font-black uppercase tracking-[0.25em] text-aura-gradient"
+                style={{ fontFamily: 'Cinzel, serif', filter: theme === 'dark' ? 'drop-shadow(0 0 20px rgba(212,175,55,0.3))' : 'none' }}
               >
                 {activeTab}
               </h1>
             </div>
-            <p className="text-[9px] font-bold uppercase tracking-[0.35em]" style={{ color: 'rgba(232,213,176,0.25)', fontFamily: 'Cinzel, serif' }}>
-              Aura Sanctum · {activeTab}
+            <p className={cn("text-[10px] font-black uppercase tracking-[0.4em] drop-shadow-md relative z-10", theme === 'dark' ? 'text-foreground/40' : 'text-foreground/50')} style={{ fontFamily: 'Cinzel, serif' }}>
+              Aura Sanctum <span className="mx-2 text-primary/50">✦</span> {activeTab}
             </p>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 relative z-10">
             {/* Search */}
             <motion.div
-              className="flex items-center gap-3 px-5 py-3 rounded-xl w-72 focus-within:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all group"
+              className={cn("flex items-center gap-3 px-6 py-3.5 rounded-2xl w-80 focus-within:shadow-[0_0_30px_rgba(212,175,55,0.25)] transition-all group relative overflow-hidden",
+                theme === 'dark' ? '' : 'shadow-sm')}
               style={{
-                background: 'rgba(10,6,15,0.6)',
-                border: '1px solid rgba(212,175,55,0.15)',
+                background: theme === 'dark' ? 'linear-gradient(135deg, rgba(10,6,15,0.8), rgba(20,10,30,0.9))' : 'linear-gradient(135deg, rgba(255,252,245,0.9), rgba(250,245,235,0.95))',
+                border: theme === 'dark' ? '1px solid rgba(212,175,55,0.3)' : '1px solid rgba(184,134,11,0.25)',
               }}
             >
-              <Search className="w-4 h-4 transition-colors" style={{ color: 'rgba(212,175,55,0.3)' }} />
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent scale-x-0 group-focus-within:scale-x-100 transition-transform duration-500 origin-center" />
+              <Search className={cn("w-4 h-4 transition-colors relative z-10 group-focus-within:text-primary", theme === 'dark' ? '' : 'text-secondary/60')} style={theme === 'dark' ? { color: 'rgba(212,175,55,0.5)' } : undefined} />
               <input
                 type="text"
-                placeholder="Search quests..."
-                className="bg-transparent border-none focus:outline-none text-xs font-medium w-full"
-                style={{ color: 'rgba(232,213,176,0.8)', fontFamily: 'Cinzel, serif' }}
+                placeholder="Search quests & lore..."
+                className={cn("bg-transparent border-none focus:outline-none text-[11px] font-bold w-full relative z-10 tracking-widest", theme === 'dark' ? 'placeholder:text-foreground/30' : 'placeholder:text-foreground/40 text-foreground')}
+                style={theme === 'dark' ? { color: 'rgba(232,213,176,0.9)', fontFamily: 'Cinzel, serif' } : { fontFamily: 'Cinzel, serif' }}
               />
             </motion.div>
 
@@ -552,7 +658,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
                           transition={{ delay: 0.2 }}
                           className="text-4xl lg:text-5xl font-black text-foreground uppercase tracking-tighter"
                         >
-                          Ready to <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Conquer</span>?
+                          Ready to <span className="text-aura-gradient">Conquer</span>?
                         </motion.h2>
                         <motion.p 
                           initial={{ opacity: 0, x: -20 }}
@@ -571,12 +677,31 @@ export function Dashboard({ onLogout }: DashboardProps) {
                         className="flex items-center gap-6 bg-background/40 backdrop-blur-xl p-5 rounded-3xl border border-white/5 shadow-2xl w-full lg:w-auto"
                       >
                         <div className="relative group/level cursor-pointer">
-                          <div className="absolute inset-0 bg-primary/40 blur-xl group-hover/level:bg-primary/60 transition-colors duration-500 animate-pulse" />
-                          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-black text-3xl shadow-[0_0_40px_rgba(139,92,246,0.3)] border border-white/20 overflow-hidden">
-                            <motion.div 
-                              className="absolute inset-0 bg-white/20 translate-y-full group-hover/level:translate-y-0 transition-transform duration-500 ease-out" 
-                            />
-                            <span className="relative z-10">{user.level}</span>
+                          <div className="absolute inset-0 bg-primary/40 blur-[30px] group-hover/level:bg-secondary/50 transition-colors duration-700 animate-pulse" />
+                          <div className="relative w-24 h-24 flex items-center justify-center drop-shadow-[0_0_20px_rgba(139,92,246,0.4)]">
+                            <motion.svg 
+                              className="absolute inset-0 w-full h-full text-primary/30" 
+                              viewBox="0 0 100 100" 
+                              animate={{ rotate: 360 }} 
+                              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                            >
+                              <polygon points="50 3 93 25 93 75 50 97 7 75 7 25" fill="none" stroke="currentColor" strokeWidth="2" />
+                              <polygon points="50 10 85 30 85 70 50 90 15 70 15 30" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" />
+                            </motion.svg>
+                            <motion.svg 
+                              className="absolute inset-0 w-full h-full text-secondary/40" 
+                              viewBox="0 0 100 100" 
+                              animate={{ rotate: -360 }} 
+                              transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+                            >
+                              <polygon points="50 15 80 32 80 68 50 85 20 68 20 32" fill="none" stroke="currentColor" strokeWidth="1" />
+                            </motion.svg>
+                            <div className="relative w-16 h-16 bg-gradient-to-br from-primary via-secondary to-accent flex items-center justify-center shadow-[inset_0_0_20px_rgba(255,255,255,0.4)] overflow-hidden" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
+                              <motion.div 
+                                className="absolute inset-0 bg-gradient-to-t from-transparent via-white/40 to-transparent translate-y-full group-hover/level:-translate-y-full transition-transform duration-700 ease-out" 
+                              />
+                              <span className="relative z-10 text-white font-black text-3xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" style={{ fontFamily: 'Cinzel, serif' }}>{user.level}</span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex-1 min-w-[200px] space-y-3">
@@ -627,6 +752,8 @@ export function Dashboard({ onLogout }: DashboardProps) {
                     <HabitList 
                       habits={habits} 
                       onToggle={handleToggleHabit} 
+                      onDelete={(id) => setHabits(prev => prev.filter(h => h.id !== id))}
+                      onEdit={(id, newName) => setHabits(prev => prev.map(h => h.id === id ? { ...h, name: newName } : h))}
                       onAdd={() => {
                         const template = HABIT_TEMPLATES[Math.floor(Math.random() * HABIT_TEMPLATES.length)];
                         const newHabit: Habit = {
@@ -824,7 +951,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
                           <p className="text-[9px] text-foreground/30 font-bold uppercase tracking-widest">Active Aura Modifiers</p>
                         </div>
                       </div>
-                      <button className="text-[9px] font-black text-primary uppercase tracking-widest hover:text-primary-light transition-colors px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/50 hover:bg-primary/5">
+                      <button 
+                        onClick={() => alert("Opening Inventory...")}
+                        className="text-[9px] font-black text-primary uppercase tracking-widest hover:text-primary-light transition-colors px-3 py-1.5 rounded-lg border border-primary/20 hover:border-primary/50 hover:bg-primary/5"
+                      >
                         Inventory
                       </button>
                     </div>
@@ -838,7 +968,9 @@ export function Dashboard({ onLogout }: DashboardProps) {
                       ].map((relic, i) => (
                         <motion.div 
                           key={i}
+                          onClick={() => alert(`Inspecting ${relic.name}: ${relic.desc}`)}
                           whileHover={{ y: -4, scale: 1.02 }}
+                          whileTap={{ scale: 0.95 }}
                           className={cn("p-4 rounded-2xl border bg-gradient-to-br cursor-pointer transition-all", relic.color, relic.border, "hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]")}
                           style={{ willChange: 'transform' }}
                         >
@@ -884,6 +1016,18 @@ export function Dashboard({ onLogout }: DashboardProps) {
                     </div>
                   </GlassCard>
                 </motion.div>
+
+                {/* === ACHIEVEMENT BADGES === */}
+                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3, type: 'spring' }} className="mt-8"
+                  style={{ willChange: 'transform, opacity' }}>
+                  <AchievementBadges />
+                </motion.div>
+
+                {/* === WEEKLY REPORT === */}
+                <div className="mt-8">
+                  <WeeklyReport habits={habits} />
+                </div>
               </>
             )}
 
@@ -891,7 +1035,9 @@ export function Dashboard({ onLogout }: DashboardProps) {
               <div className="space-y-8">
                 <HabitList 
                   habits={habits} 
-                  onToggle={handleToggleHabit} 
+                  onToggle={handleToggleHabit}
+                  onDelete={(id) => setHabits(prev => prev.filter(h => h.id !== id))}
+                  onEdit={(id, newName) => setHabits(prev => prev.map(h => h.id === id ? { ...h, name: newName } : h))}
                   onAdd={() => {
                         const template = HABIT_TEMPLATES[Math.floor(Math.random() * HABIT_TEMPLATES.length)];
                         const newHabit: Habit = {
@@ -905,6 +1051,19 @@ export function Dashboard({ onLogout }: DashboardProps) {
                         setHabits(prev => [...prev, newHabit]);
                   }} 
                 />
+                
+                <DailyBounties bounties={missions} onCompleteBounty={handleCompleteBounty} />
+                
+                {missions.find(m => m.type === 'boss') && (
+                  <BossBattle boss={missions.find(m => m.type === 'boss')!} />
+                )}
+              </div>
+            )}
+
+            {activeTab === 'treasury' && (
+              <div className="space-y-12">
+                <SkillTree user={user} onUnlockPerk={handleUnlockPerk} />
+                <ItemShop user={user} onSpendGold={handleSpendGold} onAddCustomReward={handleAddCustomReward} />
               </div>
             )}
 
@@ -989,88 +1148,113 @@ export function Dashboard({ onLogout }: DashboardProps) {
             )}
 
             {activeTab === 'profile' && (
-              <div className="max-w-2xl mx-auto space-y-8">
-                <GlassCard className="p-10 border-white/[0.08] text-center space-y-6">
-                  <div className="relative inline-block">
-                    <div className="absolute -top-4 -right-4 w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-2xl shadow-glow-purple border border-white/20">
-                      {user.emoji || '✨'}
-                    </div>
-                    <img src={user.avatar} className="w-32 h-32 rounded-3xl mx-auto border-4 border-primary shadow-2xl" alt="Profile" />
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="text-4xl font-black text-white uppercase italic">{user.name}</h2>
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-black text-white/40 uppercase tracking-widest">{user.gender || 'Not Set'}</span>
-                      <span className="px-3 py-1 bg-white/5 rounded-lg text-[10px] font-black text-white/40 uppercase tracking-widest">{user.age || '??'} Years Old</span>
-                    </div>
-                    <p className="text-primary font-black tracking-widest text-sm uppercase pt-2">Level {user.level} Elite Disciplinarian</p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 pt-6 text-left">
-                    <div className="p-4 bg-white/[0.03] rounded-2xl border border-white/[0.05]">
-                      <div className="text-2xl font-black text-white underline underline-offset-8 decoration-primary/30">{habits.length}</div>
-                      <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mt-2">Active Habits</div>
-                    </div>
-                    <div className="p-4 bg-white/[0.03] rounded-2xl border border-white/[0.05]">
-                      <div className="text-2xl font-black text-white underline underline-offset-8 decoration-primary/30">{user.xp}</div>
-                      <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mt-2">Current XP</div>
-                    </div>
-                    <div className="p-4 bg-white/[0.03] rounded-2xl border border-white/[0.05]">
-                      <div className="text-2xl font-black text-white underline underline-offset-8 decoration-primary/30">{user.level}</div>
-                      <div className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mt-2">Power Level</div>
-                    </div>
+              <div className="max-w-3xl mx-auto space-y-8">
+                {/* Hero Profile Card */}
+                <GlassCard className="p-0 border-card-border overflow-hidden relative group">
+                  {/* Banner gradient */}
+                  <div className="h-36 bg-gradient-to-br from-primary/30 via-accent/20 to-secondary/30 relative overflow-hidden">
+                    <motion.div className="absolute inset-0" style={{ background: 'linear-gradient(45deg, transparent 30%, rgba(212,175,55,0.1) 50%, transparent 70%)', backgroundSize: '200% 200%' }}
+                      animate={{ backgroundPosition: ['0% 0%', '200% 200%'] }}
+                      transition={{ duration: 6, repeat: Infinity, ease: 'linear' }} />
+                    {/* Floating particles in banner */}
+                    {[...Array(6)].map((_, i) => (
+                      <motion.div key={i} className="absolute w-1 h-1 bg-white/40 rounded-full"
+                        style={{ left: `${15 + i * 15}%`, top: '50%' }}
+                        animate={{ y: [-20, 20, -20], opacity: [0.2, 0.8, 0.2] }}
+                        transition={{ duration: 3 + i, repeat: Infinity }} />
+                    ))}
                   </div>
 
-                  <div className="pt-8 space-y-4 text-left">
-                    <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Notification Settings</h4>
-                    <div className="p-6 bg-white/[0.03] border border-white/[0.08] rounded-2xl space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-black text-white uppercase tracking-tight">Gmail Integration</p>
-                          <p className="text-[10px] text-white/30 font-bold">Receive aura reports at your Gmail address</p>
+                  <div className="px-10 pb-10 -mt-16 relative z-10">
+                    {/* Avatar with conic ring */}
+                    <div className="flex flex-col items-center gap-6">
+                      <motion.div className="relative" whileHover={{ scale: 1.05 }} transition={{ type: 'spring' }}>
+                        <motion.div className="absolute -inset-[4px] rounded-3xl"
+                          style={{ background: 'conic-gradient(from 0deg, #c8102e, #d4af37, #7c3aed, #c8102e)' }}
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 6, repeat: Infinity, ease: 'linear' }} />
+                        <img src={user.avatar} className="relative w-28 h-28 rounded-3xl border-4 border-background shadow-2xl z-10 block" alt="Profile" />
+                        <motion.div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center text-lg shadow-lg z-20 border-2 border-background"
+                          animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                          {user.emoji || '✨'}
+                        </motion.div>
+                      </motion.div>
+
+                      <div className="text-center space-y-2">
+                        <motion.h2 className="text-4xl font-black text-foreground uppercase italic tracking-tighter"
+                          style={{ fontFamily: 'Cinzel, serif' }}
+                          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                          {user.name}
+                        </motion.h2>
+                        <div className="flex items-center justify-center gap-3">
+                          <span className="px-3 py-1.5 bg-primary/10 border border-primary/20 rounded-lg text-[10px] font-black text-primary uppercase tracking-widest">{user.gender || 'Unknown'}</span>
+                          <span className="px-3 py-1.5 bg-secondary/10 border border-secondary/20 rounded-lg text-[10px] font-black text-secondary uppercase tracking-widest">{user.age || '??'} yrs</span>
                         </div>
-                        <input 
-                          type="checkbox" 
-                          className="w-10 h-5 appearance-none bg-white/10 rounded-full checked:bg-primary transition-all cursor-pointer relative after:content-[''] after:absolute after:top-1 after:left-1 after:w-3 after:h-3 after:bg-white after:rounded-full checked:after:translate-x-5 after:transition-all"
-                        />
+                        <motion.p className="text-xs font-black text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent uppercase tracking-[0.3em] pt-1"
+                          animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+                          style={{ backgroundSize: '200% 200%' }}
+                          transition={{ duration: 5, repeat: Infinity }}>
+                          Level {user.level} • Elite Disciplinarian
+                        </motion.p>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[8px] font-black text-white/20 uppercase tracking-widest">Connected Email</label>
-                        <input 
-                          type="email" 
-                          placeholder="yourname@gmail.com"
-                          className="w-full bg-white/[0.05] border border-white/10 rounded-xl py-3 px-4 text-xs text-white focus:outline-none focus:border-primary/50"
-                        />
+                    </div>
+
+                    {/* XP Progress */}
+                    <div className="mt-8 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-foreground/40 uppercase tracking-[0.2em]">Experience Points</span>
+                        <span className="text-sm font-black text-primary">{user.xp} <span className="text-foreground/30">/ {user.xpToNextLevel} XP</span></span>
                       </div>
-                      <button 
-                        onClick={() => alert("Notification test sent to your Gmail!")}
-                        className="w-full py-3 bg-primary/20 border border-primary/40 text-primary text-[8px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-primary/30 transition-all"
-                      >
-                        Send Test Notification
-                      </button>
+                      <div className="relative h-3 w-full bg-foreground/10 rounded-full overflow-hidden">
+                        <motion.div className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary via-accent to-secondary rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(user.xp / user.xpToNextLevel) * 100}%` }}
+                          transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}>
+                          <motion.div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]"
+                            animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1.5, repeat: Infinity }} />
+                        </motion.div>
+                      </div>
+                    </div>
+
+                    {/* Stat Cards */}
+                    <div className="grid grid-cols-4 gap-4 mt-8">
+                      {[
+                        { label: 'Quests', value: habits.length, icon: '⚔️', color: 'from-primary/20 to-primary/5' },
+                        { label: 'XP', value: user.xp, icon: '⚡', color: 'from-accent/20 to-accent/5' },
+                        { label: 'Level', value: user.level, icon: '🏆', color: 'from-secondary/20 to-secondary/5' },
+                        { label: 'Streak', value: Math.max(...habits.map(h => h.streak), 0), icon: '🔥', color: 'from-orange-500/20 to-orange-500/5' },
+                      ].map((stat, i) => (
+                        <motion.div key={i} className={`p-5 rounded-2xl border border-card-border bg-gradient-to-br ${stat.color} text-center relative overflow-hidden group/stat`}
+                          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.2 + i * 0.1 }} whileHover={{ y: -4, scale: 1.02 }}>
+                          <motion.div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/5 opacity-0 group-hover/stat:opacity-100 transition-opacity duration-500" />
+                          <div className="text-2xl mb-2">{stat.icon}</div>
+                          <motion.div className="text-2xl font-black text-foreground" initial={{ scale: 0 }}
+                            animate={{ scale: 1 }} transition={{ delay: 0.5 + i * 0.1, type: 'spring' }}>
+                            {stat.value}
+                          </motion.div>
+                          <div className="text-[8px] font-black text-foreground/40 uppercase tracking-[0.2em] mt-1">{stat.label}</div>
+                        </motion.div>
+                      ))}
                     </div>
                   </div>
-
-                  <button 
-                    onClick={() => setIsSettingUp(true)}
-                    className="w-full py-4 bg-white/[0.03] border border-white/[0.08] text-white/40 hover:text-white text-[10px] font-black rounded-2xl transition-all uppercase tracking-widest"
-                  >
-                    Edit Character Profile
-                  </button>
-                  
-                  <button 
-                    onClick={handleHardReset}
-                    className="w-full py-4 bg-red-500/10 border border-red-500/20 text-red-500 font-black rounded-2xl hover:bg-red-500/30 transition-all uppercase tracking-widest text-[8px]"
-                  >
-                    Danger Zone: Hard Reset All Data
-                  </button>
-
-                  <button 
-                    onClick={onLogout} 
-                    className="w-full py-4 bg-white/[0.03] border border-white/[0.08] text-white/60 font-black rounded-2xl hover:bg-white/[0.08] transition-all uppercase tracking-widest text-[10px]"
-                  >
-                    Sign Out of Aura
-                  </button>
                 </GlassCard>
+
+                {/* Actions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <motion.button onClick={() => setIsSettingUp(true)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    className="py-5 bg-foreground/[0.03] border border-card-border text-foreground/50 hover:text-foreground hover:border-primary/30 text-[10px] font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-3 group">
+                    <motion.span className="group-hover:rotate-12 transition-transform">⚙️</motion.span> Edit Character
+                  </motion.button>
+                  <motion.button onClick={onLogout} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    className="py-5 bg-foreground/[0.03] border border-card-border text-foreground/50 hover:text-foreground hover:border-foreground/20 text-[10px] font-black rounded-2xl transition-all uppercase tracking-widest flex items-center justify-center gap-3">
+                    🚪 Sign Out
+                  </motion.button>
+                </div>
+                <motion.button onClick={handleHardReset} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
+                  className="w-full py-4 bg-red-500/5 border border-red-500/10 text-red-500/50 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 font-black rounded-2xl transition-all uppercase tracking-widest text-[8px]">
+                  ⚠️ Hard Reset All Data
+                </motion.button>
               </div>
             )}
 
@@ -1081,7 +1265,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
         </AnimatePresence>
       </main>
 
-      {/* Profile Setup Onboarding Overlay */}
+      {/* Profile Setup Onboarding Overlay - PREMIUM */}
       <AnimatePresence>
         {isSettingUp && (
           <motion.div
@@ -1090,38 +1274,112 @@ export function Dashboard({ onLogout }: DashboardProps) {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-6"
           >
+            {/* Background energy beams */}
+            <motion.div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {[...Array(6)].map((_, i) => (
+                <motion.div key={i} className="absolute left-1/2 top-1/2 h-px origin-left"
+                  style={{ width: '50vw', transform: `rotate(${i * 60}deg)`,
+                    background: 'linear-gradient(90deg, rgba(212,175,55,0.15), transparent)' }}
+                  animate={{ opacity: [0.1, 0.4, 0.1] }}
+                  transition={{ duration: 3, delay: i * 0.3, repeat: Infinity }} />
+              ))}
+            </motion.div>
+
+            {/* Rising embers */}
+            {[...Array(8)].map((_, i) => (
+              <motion.div key={`ob-${i}`} className="absolute w-1 h-1 bg-secondary/60 rounded-full pointer-events-none"
+                style={{ left: `${10 + i * 12}%`, bottom: 0, boxShadow: '0 0 6px rgba(212,175,55,0.6)' }}
+                animate={{ y: [0, -window.innerHeight * 0.8], opacity: [0, 0.7, 0] }}
+                transition={{ duration: 4 + i, repeat: Infinity, delay: i * 0.5 }} />
+            ))}
+
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className="max-w-lg w-full"
+              initial={{ scale: 0.8, y: 30, rotateX: 10 }}
+              animate={{ scale: 1, y: 0, rotateX: 0 }}
+              exit={{ scale: 0.9, y: -20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+              className="max-w-lg w-full relative"
+              style={{ perspective: '1000px' }}
             >
-              <GlassCard className="p-10 space-y-8 border-primary/20 shadow-glow-purple/20">
-                <div className="text-center space-y-2">
-                  <h2 className="text-4xl font-black text-white tracking-tighter uppercase italic">Initialize Aura</h2>
-                  <p className="text-white/30 text-xs font-bold uppercase tracking-[0.2em]">Tell us about yourself to begin your journey</p>
+              <GlassCard className="p-10 space-y-8 border-secondary/30 shadow-[0_0_60px_-10px_rgba(212,175,55,0.3)] relative overflow-hidden" hover={false}>
+                {/* Animated conic border glow */}
+                <motion.div className="absolute top-0 left-0 right-0 h-[2px]"
+                  style={{ background: 'linear-gradient(90deg, transparent, #d4af37, #c8102e, #7c3aed, #d4af37, transparent)', backgroundSize: '300% 100%' }}
+                  animate={{ backgroundPosition: ['0% 0%', '300% 0%'] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} />
+                <motion.div className="absolute bottom-0 left-0 right-0 h-[2px]"
+                  style={{ background: 'linear-gradient(90deg, transparent, #7c3aed, #d4af37, #c8102e, transparent)', backgroundSize: '300% 100%' }}
+                  animate={{ backgroundPosition: ['300% 0%', '0% 0%'] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} />
+
+                {/* Header with icon */}
+                <div className="text-center space-y-4">
+                  <motion.div className="relative inline-block"
+                    animate={{ y: [0, -5, 0] }} transition={{ duration: 3, repeat: Infinity }}>
+                    <motion.div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-3xl relative"
+                      style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.2), rgba(200,16,46,0.2))', border: '1px solid rgba(212,175,55,0.4)' }}>
+                      <motion.div className="absolute inset-0 rounded-2xl"
+                        style={{ background: 'conic-gradient(from 0deg, rgba(200,16,46,0.3), rgba(212,175,55,0.3), rgba(124,58,237,0.3), rgba(200,16,46,0.3))' }}
+                        animate={{ rotate: 360 }} transition={{ duration: 6, repeat: Infinity, ease: 'linear' }} />
+                      <span className="relative z-10">⚔️</span>
+                    </motion.div>
+                  </motion.div>
+                  <motion.h2 className="text-3xl font-black tracking-tighter uppercase text-aura-gradient"
+                    style={{ fontFamily: 'Cinzel, serif' }}
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    Forge Your Legend
+                  </motion.h2>
+                  <p className="text-white/30 text-[10px] font-bold uppercase tracking-[0.3em]">Complete the ritual to begin</p>
+                  
+                  {/* Step indicators */}
+                  <div className="flex items-center justify-center gap-2 pt-2">
+                    {['Class', 'Avatar', 'Identity'].map((step, i) => (
+                      <div key={step} className="flex items-center gap-2">
+                        <motion.div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black border transition-all",
+                          (i === 0 && user.gender) || (i === 1 && user.avatar) || (i === 2 && user.age && user.emoji)
+                            ? "bg-secondary/20 border-secondary/50 text-secondary" : "bg-white/5 border-white/10 text-white/20"
+                        )}>
+                          {(i === 0 && user.gender) || (i === 1 && user.avatar) || (i === 2 && user.age && user.emoji) ? '✓' : i + 1}
+                        </motion.div>
+                        {i < 2 && <div className="w-8 h-px bg-white/10" />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-6">
                   {/* Gender Selection */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Gender Identity</label>
+                  <motion.div className="space-y-3" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+                    <label className="text-[10px] font-black text-secondary/60 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                      <span className="text-secondary">⚔</span> Choose Your Class
+                    </label>
                     <div className="grid grid-cols-3 gap-3">
-                      {['male', 'female', 'other'].map((g) => (
-                        <button
-                          key={g}
-                          onClick={() => setUser(prev => ({ ...prev, gender: g as any, avatar: g === 'female' ? femaleAvatars[0] : maleAvatars[0] }))}
+                      {[
+                        { id: 'male', icon: '🛡️', label: 'Warrior' },
+                        { id: 'female', icon: '🧙‍♀️', label: 'Sorceress' },
+                        { id: 'other', icon: '🌟', label: 'Mystic' },
+                      ].map((g) => (
+                        <motion.button
+                          key={g.id}
+                          onClick={() => { setUser(prev => ({ ...prev, gender: g.id as any, avatar: g.id === 'female' ? femaleAvatars[0] : maleAvatars[0] })); playButtonClick(); }}
+                          whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}
                           className={cn(
-                            "py-4 rounded-2xl border font-black text-[10px] tracking-widest uppercase transition-all",
-                            user.gender === g 
-                              ? "bg-primary border-primary text-white shadow-glow-purple/50" 
-                              : "bg-white/[0.03] border-white/[0.08] text-white/20 hover:border-white/20"
+                            "py-5 rounded-2xl border font-black text-[10px] tracking-widest uppercase transition-all relative overflow-hidden flex flex-col items-center gap-2",
+                            user.gender === g.id 
+                              ? "border-secondary/50 text-secondary shadow-[0_0_25px_rgba(212,175,55,0.3)]" 
+                              : "bg-white/[0.03] border-white/[0.08] text-white/30 hover:border-white/20"
                           )}
                         >
-                          {g}
-                        </button>
+                          {user.gender === g.id && (
+                            <motion.div className="absolute inset-0" layoutId="genderBg"
+                              style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.15), rgba(200,16,46,0.1))' }} />
+                          )}
+                          <span className="text-xl relative z-10">{g.icon}</span>
+                          <span className="relative z-10">{g.label}</span>
+                        </motion.button>
                       ))}
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Character Avatar Selection */}
                   {user.gender && (
@@ -1130,61 +1388,81 @@ export function Dashboard({ onLogout }: DashboardProps) {
                       animate={{ opacity: 1, height: 'auto' }}
                       className="space-y-3"
                     >
-                      <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Select Character Appearance (15 Options)</label>
-                      <div className="grid grid-cols-5 gap-3 max-h-40 overflow-y-auto p-2 glass-dark rounded-2xl border border-white/5 custom-scrollbar">
+                      <label className="text-[10px] font-black text-secondary/60 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                        <span className="text-secondary">👤</span> Select Appearance
+                      </label>
+                      <div className="grid grid-cols-5 gap-3 max-h-40 overflow-y-auto p-2 rounded-2xl border border-white/5 custom-scrollbar" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         {currentAvatars.map((av, idx) => (
-                          <button
+                          <motion.button
                             key={av}
-                            onClick={() => setUser(prev => ({ ...prev, avatar: av }))}
+                            onClick={() => { setUser(prev => ({ ...prev, avatar: av })); playButtonClick(); }}
+                            whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }}
                             className={cn(
                               "relative rounded-xl overflow-hidden border-2 transition-all p-1",
-                              user.avatar === av ? "border-primary bg-primary/10" : "border-transparent bg-white/5"
+                              user.avatar === av ? "border-secondary bg-secondary/10 shadow-[0_0_15px_rgba(212,175,55,0.3)]" : "border-transparent bg-white/5 hover:border-white/20"
                             )}
                           >
-                            <img src={av} alt={`Avatar ${idx}`} className="w-full h-auto" />
-                          </button>
+                            <img src={av} alt={`Avatar ${idx}`} className="w-full h-auto rounded-lg" />
+                            {user.avatar === av && (
+                              <motion.div className="absolute inset-0 bg-secondary/10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} />
+                            )}
+                          </motion.button>
                         ))}
                       </div>
                     </motion.div>
                   )}
 
                   {/* Age & Emoji */}
-                  <div className="grid grid-cols-2 gap-6">
+                  <motion.div className="grid grid-cols-2 gap-6" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Your Age</label>
-                      <input 
-                        type="number" 
-                        placeholder="21"
-                        onChange={(e) => setUser(prev => ({ ...prev, age: parseInt(e.target.value) }))}
-                        className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl py-4 px-6 text-white text-xl font-black focus:outline-none focus:border-primary/50 transition-all"
-                      />
+                      <label className="text-[10px] font-black text-secondary/60 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                        <span className="text-secondary">📅</span> Your Age
+                      </label>
+                      <div className="relative group/age">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-secondary/30 to-primary/30 rounded-2xl blur opacity-0 group-hover/age:opacity-50 group-focus-within/age:opacity-70 transition-opacity" />
+                        <input 
+                          type="number" 
+                          placeholder="21"
+                          onChange={(e) => setUser(prev => ({ ...prev, age: parseInt(e.target.value) }))}
+                          className="relative w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl py-4 px-6 text-white text-xl font-black focus:outline-none focus:border-secondary/50 transition-all"
+                        />
+                      </div>
                     </div>
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Choose Aura Icon</label>
+                      <label className="text-[10px] font-black text-secondary/60 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                        <span className="text-secondary">✨</span> Aura Sigil
+                      </label>
                       <div className="flex gap-2">
-                        {['⚡', '🔥', '👑', '🌌'].map(e => (
-                          <button
+                        {['⚡', '🔥', '👑', '🌌', '💎', '🗡️'].map(e => (
+                          <motion.button
                             key={e}
-                            onClick={() => setUser(prev => ({ ...prev, emoji: e }))}
+                            onClick={() => { setUser(prev => ({ ...prev, emoji: e })); playButtonClick(); }}
+                            whileHover={{ scale: 1.15, y: -3 }} whileTap={{ scale: 0.9 }}
                             className={cn(
-                              "w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all",
-                              user.emoji === e ? "bg-primary/20 border border-primary/50 scale-110" : "bg-white/[0.03] border border-white/[0.08]"
+                              "w-11 h-11 rounded-xl flex items-center justify-center text-lg transition-all",
+                              user.emoji === e ? "bg-secondary/20 border border-secondary/50 shadow-[0_0_15px_rgba(212,175,55,0.3)]" : "bg-white/[0.03] border border-white/[0.08] hover:border-white/20"
                             )}
                           >
                             {e}
-                          </button>
+                          </motion.button>
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <button 
+                  <motion.button 
                     disabled={!user.gender || !user.age || !user.emoji}
                     onClick={() => handleSetupComplete({})}
-                    className="w-full py-5 bg-white text-black font-black rounded-2xl text-[10px] tracking-[0.3em] uppercase hover:scale-[1.02] active:scale-[0.98] disabled:opacity-20 disabled:scale-100 transition-all shadow-xl mt-4"
+                    whileHover={{ scale: 1.02, boxShadow: '0 0 40px rgba(212,175,55,0.3)' }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full py-5 rounded-2xl text-[10px] tracking-[0.3em] uppercase font-black disabled:opacity-20 disabled:scale-100 transition-all mt-4 relative overflow-hidden"
+                    style={{ background: 'linear-gradient(135deg, #d4af37, #b8960c)', color: '#000', boxShadow: '0 0 30px rgba(212,175,55,0.3)' }}
                   >
-                    Enter the Void
-                  </button>
+                    <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                      animate={{ x: ['-200%', '200%'] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }} />
+                    <span className="relative z-10">⚔️ Enter the Realm</span>
+                  </motion.button>
                 </div>
               </GlassCard>
             </motion.div>
@@ -1192,7 +1470,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
         )}
       </AnimatePresence>
 
-      {/* Level Up Celebration - Enhanced Immersive UI */}
+      {/* Level Up Celebration - Cinematic */}
       <AnimatePresence>
         {showLevelUp && (
           <motion.div
@@ -1201,48 +1479,95 @@ export function Dashboard({ onLogout }: DashboardProps) {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center"
           >
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-2xl" />
             
-            {/* Particle Effects (Simplified with CSS) */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              {[...Array(20)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ y: '100vh', x: Math.random() * 100 + 'vw', opacity: 1 }}
-                  animate={{ y: '-10vh', opacity: 0 }}
-                  transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }}
-                  className="absolute w-1 h-1 bg-primary rounded-full blur-[1px]"
-                />
-              ))}
-            </div>
+            {/* Explosive particle ring */}
+            {[...Array(30)].map((_, i) => {
+              const angle = (i * 12) * Math.PI / 180;
+              return (
+                <motion.div key={i}
+                  className="absolute w-1.5 h-1.5 rounded-full"
+                  style={{ left: '50%', top: '50%',
+                    backgroundColor: ['#d4af37', '#c8102e', '#7c3aed', '#ffd700', '#ff6b35'][i % 5],
+                    boxShadow: `0 0 10px ${['#d4af37', '#c8102e', '#7c3aed', '#ffd700', '#ff6b35'][i % 5]}` }}
+                  initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                  animate={{ x: Math.cos(angle) * (200 + Math.random() * 100), y: Math.sin(angle) * (200 + Math.random() * 100), scale: [0, 1.5, 0], opacity: [1, 0.8, 0] }}
+                  transition={{ duration: 2, delay: 0.5 + Math.random() * 0.3, ease: 'easeOut' }} />
+              );
+            })}
+
+            {/* Rising embers */}
+            {[...Array(20)].map((_, i) => (
+              <motion.div key={`ember-${i}`}
+                initial={{ y: '100vh', x: `${Math.random() * 100}vw`, opacity: 1 }}
+                animate={{ y: '-10vh', opacity: 0 }}
+                transition={{ duration: 2.5 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }}
+                className="absolute w-1 h-1 bg-secondary rounded-full blur-[1px]"
+                style={{ boxShadow: '0 0 6px #d4af37' }} />
+            ))}
 
             <motion.div
-              initial={{ scale: 0.5, y: 100, rotate: -10 }}
-              animate={{ scale: 1, y: 0, rotate: 0 }}
-              exit={{ scale: 1.2, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+              initial={{ scale: 0, rotateY: 90 }}
+              animate={{ scale: 1, rotateY: 0 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 150, damping: 12, delay: 0.3 }}
               className="relative z-10"
             >
-              <GlassCard className="p-16 text-center space-y-10 border-primary/40 shadow-[0_0_100px_-20px_rgba(139,92,246,0.5)] max-w-lg" hover={false}>
+              <GlassCard className="p-16 text-center space-y-8 border-secondary/40 shadow-[0_0_100px_-20px_rgba(212,175,55,0.5)] max-w-lg relative overflow-hidden" hover={false}>
+                {/* Animated border glow */}
+                <motion.div className="absolute top-0 left-0 right-0 h-[3px]"
+                  style={{ background: 'linear-gradient(90deg, transparent, #d4af37, #c8102e, #d4af37, transparent)', backgroundSize: '200% 100%' }}
+                  animate={{ backgroundPosition: ['0% 0%', '200% 0%'] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} />
+
+                {/* Trophy with glow */}
                 <div className="relative inline-block">
-                  <div className="absolute inset-0 bg-primary blur-3xl opacity-30 animate-pulse" />
-                  <Trophy className="w-32 h-32 text-primary mx-auto relative z-10 drop-shadow-[0_0_30px_rgba(139,92,246,0.8)]" />
+                  <motion.div className="absolute inset-0 bg-secondary/30 blur-[50px] rounded-full"
+                    animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }} />
+                  <motion.div initial={{ rotateY: 180, scale: 0 }}
+                    animate={{ rotateY: 0, scale: 1 }}
+                    transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}>
+                    <Trophy className="w-28 h-28 text-secondary mx-auto relative z-10 drop-shadow-[0_0_40px_rgba(212,175,55,0.8)]" />
+                  </motion.div>
                 </div>
                 
                 <div className="space-y-4">
-                  <h2 className="text-6xl font-black text-white tracking-tighter uppercase italic">Level Up</h2>
-                  <div className="h-1 w-24 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto" />
-                  <p className="text-2xl text-primary font-black tracking-widest uppercase">Rank: Aura Master</p>
+                  <motion.h2 className="text-6xl font-black uppercase italic tracking-tighter"
+                    style={{ fontFamily: 'Cinzel, serif', backgroundImage: 'linear-gradient(to right, #b8960c, #ffd700, #fff8b0, #ffd700, #b8960c)',
+                      backgroundSize: '200% auto', backgroundClip: 'text', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                      animation: 'shine-gold 3s linear infinite' }}
+                    initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.7 }}>
+                    Level Up!
+                  </motion.h2>
+                  <motion.div className="h-1 w-32 bg-gradient-to-r from-transparent via-secondary to-transparent mx-auto"
+                    initial={{ scaleX: 0 }} animate={{ scaleX: 1 }}
+                    transition={{ delay: 0.9, duration: 0.5 }} />
+                  <motion.p className="text-xl text-secondary font-black tracking-[0.3em] uppercase"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
+                    Rank: Aura Master
+                  </motion.p>
                 </div>
                 
-                <p className="text-white/40 font-medium text-lg">You've reached Level {user.level}. <br /> New rewards have been unlocked.</p>
+                <motion.p className="text-white/40 font-medium text-lg"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>
+                  You've reached Level {user.level}. <br /> New rewards unlocked.
+                </motion.p>
                 
-                <button 
+                <motion.button 
                   onClick={() => setShowLevelUp(false)}
-                  className="px-12 py-4 bg-primary text-white font-black rounded-2xl shadow-glow-purple transition-all hover:scale-105 active:scale-95 uppercase tracking-widest text-sm"
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1.3 }}
+                  whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(212,175,55,0.4)' }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-12 py-4 bg-gradient-to-r from-secondary to-primary text-white font-black rounded-2xl shadow-xl transition-all uppercase tracking-[0.3em] text-sm relative overflow-hidden"
                 >
-                  Claim Rewards
-                </button>
+                  <motion.div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                    animate={{ x: ['-200%', '200%'] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} />
+                  <span className="relative z-10">⚡ Claim Rewards</span>
+                </motion.button>
               </GlassCard>
             </motion.div>
           </motion.div>
