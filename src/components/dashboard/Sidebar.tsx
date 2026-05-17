@@ -178,7 +178,7 @@ export function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
           <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-8 bg-secondary/20 blur-xl rounded-full pointer-events-none" animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.8, 0.5] }} transition={{ duration: 3, repeat: Infinity }} />
           <motion.div
             className="text-2xl font-black tracking-[0.4em] uppercase relative z-10"
-            style={{ fontFamily: 'Cinzel, serif', color: '#ffd700', backgroundImage: 'linear-gradient(to right, #b8960c, #ffd700, #fff8b0)', WebkitBackgroundClip: 'text', color: 'transparent' }}
+            style={{ fontFamily: 'Cinzel, serif', backgroundImage: 'linear-gradient(to right, #b8960c, #ffd700, #fff8b0)', WebkitBackgroundClip: 'text', color: 'transparent' }}
             animate={{ textShadow: ['0 0 20px rgba(212,175,55,0.4)', '0 0 40px rgba(212,175,55,0.8)', '0 0 20px rgba(212,175,55,0.4)'] }}
             transition={{ duration: 4, repeat: Infinity }}
           >

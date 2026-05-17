@@ -10,6 +10,7 @@ import { SkillTree } from '@/src/components/dashboard/SkillTree';
 import { ItemShop } from '@/src/components/dashboard/ItemShop';
 import { BossBattle } from '@/src/components/dashboard/BossBattle';
 import { DailyBounties } from '@/src/components/dashboard/DailyBounties';
+import { CompanionSystem } from '@/src/components/dashboard/CompanionSystem';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { GlassCard } from '@/src/components/ui/GlassCard';
 import { Habit, User, Mission, Notification } from '@/src/types';
@@ -310,6 +311,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
 
           let goldEarned = 10;
           if (user.unlockedPerks.includes('m3')) goldEarned = Math.floor(goldEarned * 1.2); // Mystic: Aura Bloom
+          if (user.companion && user.companion.type === 'wolf') goldEarned = Math.floor(goldEarned * 1.1); // Companion Cosmic Path
 
           const newXp = user.xp + baseXp;
           let levelUp = false;
@@ -322,7 +324,31 @@ export function Dashboard({ onLogout }: DashboardProps) {
             levelUp = true;
           }
 
-          setUser(u => ({ ...u, level: newLevel, xp: finalXp, gold: u.gold + goldEarned, skillPoints: levelUp ? u.skillPoints + 1 : u.skillPoints }));
+          // Companion feeding/XP logic
+          let updatedCompanion = user.companion;
+          if (updatedCompanion) {
+            let petXp = updatedCompanion.xp + 10;
+            let petLevel = updatedCompanion.level;
+            if (petXp >= updatedCompanion.xpToNextLevel) {
+              petLevel++;
+              petXp = petXp - updatedCompanion.xpToNextLevel;
+            }
+            updatedCompanion = {
+              ...updatedCompanion,
+              level: petLevel,
+              xp: petXp,
+              hunger: Math.min(100, updatedCompanion.hunger + 5)
+            };
+          }
+
+          setUser(u => ({ 
+            ...u, 
+            level: newLevel, 
+            xp: finalXp, 
+            gold: u.gold + goldEarned, 
+            skillPoints: levelUp ? u.skillPoints + 1 : u.skillPoints,
+            companion: updatedCompanion
+          }));
 
           if (levelUp) {
             setShowLevelUp(true);
@@ -334,7 +360,8 @@ export function Dashboard({ onLogout }: DashboardProps) {
           // Deal Boss Damage
           setMissions(prevMissions => prevMissions.map(m => {
             if (m.type === 'boss' && m.bossHp && m.bossHp > 0 && !m.completed) {
-              const damage = user.unlockedPerks.includes('w3') ? 20 : 10; // Warrior: Berserker
+              let damage = user.unlockedPerks.includes('w3') ? 20 : 10; // Warrior: Berserker
+              if (user.companion && user.companion.type === 'dragon') damage = Math.floor(damage * 1.05); // Companion Dwarven Might
               const newHp = Math.max(0, m.bossHp - damage);
               if (newHp === 0) {
                 // Boss Defeated!
@@ -1251,6 +1278,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
                     🚪 Sign Out
                   </motion.button>
                 </div>
+
+                {/* === MYTHICAL SOUL COMPANIONS === */}
+                <CompanionSystem 
+                  user={user} 
+                  onUpdateCompanion={(companion) => setUser(prev => ({ ...prev, companion }))}
+                  onSpendGold={handleSpendGold}
+                />
+
                 <motion.button onClick={handleHardReset} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
                   className="w-full py-4 bg-red-500/5 border border-red-500/10 text-red-500/50 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 font-black rounded-2xl transition-all uppercase tracking-widest text-[8px]">
                   ⚠️ Hard Reset All Data

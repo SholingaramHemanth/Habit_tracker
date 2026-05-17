@@ -54,6 +54,17 @@ export interface UserSettings {
   vacationMode: boolean;
 }
 
+export interface Companion {
+  id: string;
+  name: string;
+  type: 'dragon' | 'phoenix' | 'wolf';
+  level: number;
+  xp: number;
+  xpToNextLevel: number;
+  hunger: number; // 0-100
+  activePerk: string;
+}
+
 export interface User {
   name: string;
   level: number;
@@ -69,6 +80,7 @@ export interface User {
   unlockedPerks: string[];
   goal?: string;
   settings: UserSettings;
+  companion?: Companion;
 }
 
 export interface Mission {
