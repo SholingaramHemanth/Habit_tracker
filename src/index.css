@@ -76,16 +76,24 @@
 @layer components {
   .glass {
     background: var(--card-bg);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--card-border);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(212, 175, 55, 0.08);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    will-change: transform, opacity;
   }
 
   .glass-dark {
     background: var(--sidebar-bg);
-    backdrop-filter: blur(30px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-right: 1px solid var(--sidebar-border);
     box-shadow: 4px 0 30px rgba(0, 0, 0, 0.6);
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    will-change: transform, opacity;
   }
 
   /* Fantasy parchment-style card border */
