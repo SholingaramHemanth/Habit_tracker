@@ -65,6 +65,17 @@ export interface Companion {
   activePerk: string;
 }
 
+export interface Curse {
+  id: string;
+  name: string;
+  description: string;
+  type: 'sloth' | 'gluttony' | 'distraction';
+  active: boolean;
+  cleansingHabitId: string; // The habit to check off to cleanse
+  penaltyGold: number;
+  penaltyXp: number;
+}
+
 export interface User {
   name: string;
   level: number;
@@ -81,6 +92,7 @@ export interface User {
   goal?: string;
   settings: UserSettings;
   companion?: Companion;
+  curses?: Curse[];
 }
 
 export interface Mission {

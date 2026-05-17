@@ -11,6 +11,7 @@ import { ItemShop } from '@/src/components/dashboard/ItemShop';
 import { BossBattle } from '@/src/components/dashboard/BossBattle';
 import { DailyBounties } from '@/src/components/dashboard/DailyBounties';
 import { CompanionSystem } from '@/src/components/dashboard/CompanionSystem';
+import { MoodScrolls } from '@/src/components/dashboard/MoodScrolls';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { GlassCard } from '@/src/components/ui/GlassCard';
 import { Habit, User, Mission, Notification } from '@/src/types';
@@ -1076,6 +1077,30 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 {/* === WEEKLY REPORT === */}
                 <div className="mt-8">
                   <WeeklyReport habits={habits} />
+                </div>
+
+                {/* === MOOD ATTUNEMENT SCROLLS === */}
+                <div className="mt-8">
+                  <MoodScrolls onReward={(xp, gold) => {
+                    setUser(u => {
+                      let newXp = u.xp + xp;
+                      let newLevel = u.level;
+                      let finalXp = newXp;
+                      let levelUp = false;
+                      if (newXp >= u.xpToNextLevel) {
+                        newLevel++;
+                        finalXp = newXp - u.xpToNextLevel;
+                        levelUp = true;
+                      }
+                      return {
+                        ...u,
+                        level: newLevel,
+                        xp: finalXp,
+                        gold: u.gold + gold,
+                        skillPoints: levelUp ? u.skillPoints + 1 : u.skillPoints
+                      };
+                    });
+                  }} />
                 </div>
               </>
             )}
