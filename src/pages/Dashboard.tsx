@@ -13,6 +13,7 @@ import { DailyBounties } from '@/src/components/dashboard/DailyBounties';
 import { CompanionSystem } from '@/src/components/dashboard/CompanionSystem';
 import { MoodScrolls } from '@/src/components/dashboard/MoodScrolls';
 import { CursesTracker } from '@/src/components/dashboard/CursesTracker';
+import { Grimoire } from '@/src/components/dashboard/Grimoire';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { GlassCard } from '@/src/components/ui/GlassCard';
 import { Habit, User, Mission, Notification, Curse } from '@/src/types';
@@ -307,6 +308,19 @@ export function Dashboard({ onLogout }: DashboardProps) {
       confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
       confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
     }, 250);
+  };
+
+  const handleRestoreCompanion = () => {
+    setUser(u => {
+      if (!u.companion) return u;
+      return {
+        ...u,
+        companion: {
+          ...u.companion,
+          hunger: 100
+        }
+      };
+    });
   };
 
   const handleToggleHabit = (id: string) => {
@@ -1275,6 +1289,34 @@ export function Dashboard({ onLogout }: DashboardProps) {
                     </div>
                   </div>
                 </GlassCard>
+
+                {/* === THE ARCHMAGE'S GRIMOIRE === */}
+                <div className="mt-8">
+                  <Grimoire
+                    gold={user.gold}
+                    onReward={(xp, gold) => {
+                      setUser(u => {
+                        let newXp = u.xp + xp;
+                        let newLevel = u.level;
+                        let finalXp = newXp;
+                        let levelUp = false;
+                        if (newXp >= u.xpToNextLevel) {
+                          newLevel++;
+                          finalXp = newXp - u.xpToNextLevel;
+                          levelUp = true;
+                        }
+                        return {
+                          ...u,
+                          level: newLevel,
+                          xp: finalXp,
+                          gold: u.gold + gold,
+                          skillPoints: levelUp ? u.skillPoints + 1 : u.skillPoints
+                        };
+                      });
+                    }}
+                    onRestoreCompanion={handleRestoreCompanion}
+                  />
+                </div>
               </div>
             )}
 
