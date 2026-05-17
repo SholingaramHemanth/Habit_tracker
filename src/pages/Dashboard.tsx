@@ -408,8 +408,30 @@ export function Dashboard({ onLogout }: DashboardProps) {
     }));
   };
 
-  const handleSpendGold = (amount: number) => {
-    setUser(u => ({ ...u, gold: Math.max(0, u.gold - amount) }));
+  const handleSpendGold = (amount: number, item?: any) => {
+    setUser(u => {
+      let updatedUser = { ...u, gold: Math.max(0, u.gold - amount) };
+      
+      if (item) {
+        if (item.id === 'avatar_dragon') {
+          updatedUser.avatar = 'https://api.dicebear.com/7.x/pixel-art/svg?seed=dragon&scale=120';
+        } else if (item.id === 'avatar_void') {
+          updatedUser.avatar = 'https://api.dicebear.com/7.x/identicon/svg?seed=void&scale=120';
+        } else if (item.id === 'sigil_crown') {
+          // Prepend crown to user name if not already crowned
+          if (!updatedUser.name.startsWith('👑')) {
+            updatedUser.name = `👑 ${updatedUser.name}`;
+          }
+        } else if (item.id === 'theme_elven') {
+          updatedUser.settings = {
+            ...updatedUser.settings,
+            realm: 'forest'
+          };
+        }
+      }
+      
+      return updatedUser;
+    });
   };
 
   const handleAddCustomReward = (reward: any) => {
