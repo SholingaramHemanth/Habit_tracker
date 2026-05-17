@@ -12,9 +12,10 @@ import { BossBattle } from '@/src/components/dashboard/BossBattle';
 import { DailyBounties } from '@/src/components/dashboard/DailyBounties';
 import { CompanionSystem } from '@/src/components/dashboard/CompanionSystem';
 import { MoodScrolls } from '@/src/components/dashboard/MoodScrolls';
+import { CursesTracker } from '@/src/components/dashboard/CursesTracker';
 import { ProgressBar } from '@/src/components/ui/ProgressBar';
 import { GlassCard } from '@/src/components/ui/GlassCard';
-import { Habit, User, Mission, Notification } from '@/src/types';
+import { Habit, User, Mission, Notification, Curse } from '@/src/types';
 import { Bell, Search, Trophy, Star, Zap, BellOff, Shield, BookOpen, Clock, Activity, Hexagon } from 'lucide-react';
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'motion/react';
 import { cn } from '@/src/lib/utils';
@@ -180,6 +181,11 @@ export function Dashboard({ onLogout }: DashboardProps) {
     ];
   });
 
+  const [curses, setCurses] = useState<Curse[]>(() => {
+    const saved = localStorage.getItem('aura_curses');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const bgImage = REALM_BACKGROUNDS[user.settings.realm as keyof typeof REALM_BACKGROUNDS] || REALM_BACKGROUNDS[theme as 'dark' | 'light'] || REALM_BACKGROUNDS.dark;
   
   const currentAvatars = user.gender === 'female' ? femaleAvatars : maleAvatars;
@@ -279,6 +285,10 @@ export function Dashboard({ onLogout }: DashboardProps) {
   }, [missions]);
 
   useEffect(() => {
+    localStorage.setItem('aura_curses', JSON.stringify(curses));
+  }, [curses]);
+
+  useEffect(() => {
     localStorage.setItem('aura_user', JSON.stringify(user));
     if (user.settings.accentColor) {
       document.documentElement.style.setProperty('--primary', user.settings.accentColor);
@@ -374,6 +384,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
             return m;
           }));
 
+          // Cleanse linked active curses
+          setCurses(prevCurses => prevCurses.map(c => {
+            if (c.cleansingHabitId === id && c.active) {
+              return { ...c, active: false };
+            }
+            return c;
+          }));
+
         } else {
           // Un-toggling habit (taking damage from boss)
           setMissions(prevMissions => prevMissions.map(m => {
@@ -383,6 +401,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
               return { ...m, bossHp: Math.min(m.bossMaxHp || 500, m.bossHp + damage) };
             }
             return m;
+          }));
+
+          // Reactivate linked curses
+          setCurses(prevCurses => prevCurses.map(c => {
+            if (c.cleansingHabitId === id && !c.active) {
+              return { ...c, active: true };
+            }
+            return c;
           }));
         }
         return { ...h, completedToday: newState, streak: newState ? h.streak + 1 : Math.max(0, h.streak - 1) };
@@ -1101,6 +1127,37 @@ export function Dashboard({ onLogout }: DashboardProps) {
                       };
                     });
                   }} />
+                </div>
+
+                {/* === CURSES & DOOM TRACKER === */}
+                <div className="mt-8">
+                  <CursesTracker
+                    curses={curses}
+                    habits={habits}
+                    gold={user.gold}
+                    onUpdateCurses={setCurses}
+                    onSpendGold={(amount) => setUser(u => ({ ...u, gold: Math.max(0, u.gold - amount) }))}
+                    onReward={(xp, gold) => {
+                      setUser(u => {
+                        let newXp = u.xp + xp;
+                        let newLevel = u.level;
+                        let finalXp = newXp;
+                        let levelUp = false;
+                        if (newXp >= u.xpToNextLevel) {
+                          newLevel++;
+                          finalXp = newXp - u.xpToNextLevel;
+                          levelUp = true;
+                        }
+                        return {
+                          ...u,
+                          level: newLevel,
+                          xp: finalXp,
+                          gold: u.gold + gold,
+                          skillPoints: levelUp ? u.skillPoints + 1 : u.skillPoints
+                        };
+                      });
+                    }}
+                  />
                 </div>
               </>
             )}
